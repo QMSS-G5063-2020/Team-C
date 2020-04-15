@@ -1,0 +1,58 @@
+---
+title: "SG_GDP"
+author: "Richa Gupta"
+date: "14/04/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(readr)
+library(ggplot2)
+library(dplyr)
+library(scales)
+setwd(getwd())
+
+df_gdp_pp <- read_csv("Data/GDP_PP/GDP_PP.csv", skip = 4, trim_ws = TRUE, na = "NA")
+df_gdp_pp <- data.frame(df_gdp_pp)
+
+# Source- https://www.worldbank.org/
+```
+```{r}
+need <- c("Lebanon", "Micronesia, Fed. Sts.", "Tonga", "Maldives", "Eritrea")
+
+# Identify the top 10 countries and the ranks of the countries we need in 2018.
+df_gdp_pp %>%
+  select(`Country.Name`, `X2018`) %>%
+  arrange(desc(`X2018`)) %>%
+  head(n = 20)
+
+top_10 <- c("Monaco", "Luxembourg", "Macao SAR, China", "Switzerland", "Norway",
+            "Ireland", "Iceland", "Qatar", "Singapore", "United States")
+
+
+df_gdp_pp_need <- df_gdp_pp %>%
+  filter(Country.Name %in% top_10 | Country.Name %in% need) %>%
+  select(`Country.Name`, `X2018`) %>%
+  arrange(desc(`X2018`))
+
+
+# GDP per capita is increasing at rate of 7.2% , 2011 value is 811.3760	
+df_gdp_pp_need$X2018[df_gdp_pp_need$Country.Name == "Eritrea"] <- 811.3760 * 1.072 * 7
+
+```
+
+```{r}
+ggplot(df_gdp_pp_need) +
+  geom_bar(aes(x = reorder(Country.Name, X2018), y = X2018), stat = "identity") +
+  scale_y_continuous(labels = comma) +
+  labs(title = "GDP per capita",
+       subtitle = "2018 (Top 10 countries along with top 5 emigration countries)",
+       caption = "https://www.worldbank.org/", parse = TRUE) +
+  xlab(NULL) + ylab(NULL) +
+  coord_flip()
+```
+
