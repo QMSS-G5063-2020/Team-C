@@ -1,0 +1,41 @@
+---
+title: "worldbank"
+author: "Jose Andres Montes Lopez"
+date: "4/19/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#install.packages('wbstats')
+#install.packages('tidyverse')
+library(wbstats)
+library(tidyverse)
+```
+
+## WB Wrangling
+
+```{r}
+net_migration <- wb(country = "countries_only",indicator = "SM.POP.NETM",  startdate = 1960, enddate = "2018")
+
+#selects relevant data and reorganizes dataframe
+net_migration <- filter(net_migration, net_migration$country!="Virgin Islands (U.S.)") 
+#SM.POP.TOTL (immigration )
+#SM.POP.NETM (net migration)
+
+#adds region throug joining on iso3c code 
+net_migration <- net_migration %>%
+  dplyr::left_join(wbstats::wbcountries() %>%                         
+                     dplyr::select(iso3c, region)) %>%
+  tidyr::pivot_wider(
+    id_cols = c("date", "country", "region"), 
+    names_from = indicator, 
+    values_from = value
+    )
+
+filter(net_migration,net_migration$date==2012) %>% arrange(`Net migration`)
+```
+```{r}
+filter(net_migration,net_migration$date==2012&net_migration$region=="Middle East & North Africa"&net_migration$country=="Bahrain")
+```
+
