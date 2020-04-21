@@ -1,0 +1,61 @@
+---
+title: "SG_POP"
+author: "Richa Gupta"
+date: "14/04/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(readxl)
+library(ggplot2)
+library(dplyr)
+library(scales)
+library(tidyr)
+setwd(getwd())
+
+df_pop <- read_xlsx("Data/population.xlsx", skip = 1, trim_ws = TRUE, na = "NA")
+
+df_pop <- gather(df_pop, key = "age_group", value = "pop", -country, -year)
+
+# main source - https://population.un.org/
+```
+
+```{r}
+
+ggplot(filter(df_pop, year == 2019),
+       aes(x = age_group, y = as.numeric(pop), fill = country)) +
+  geom_bar(
+    data = filter(df_pop, country == "Eritrea"),
+    stat = "identity",
+    alpha = 0.5
+  ) + geom_bar(
+    data = filter(df_pop, country == "Lebanon"),
+    stat = "identity",
+    alpha = 0.5
+  ) + geom_bar(
+    data = filter(df_pop, country == "Maldives"),
+    stat = "identity",
+    alpha = 0.5
+  ) + geom_bar(
+    data = filter(df_pop, country == "Micronesia (Fed. States of)"),
+    stat = "identity",
+    alpha = 0.5
+  ) +
+  geom_bar(
+    data = filter(df_pop, country == "Tonga"),
+    stat = "identity",
+    alpha = 0.5
+  ) +
+  labs(
+    title = "Population distribution",
+    subtitle = "Different age groups",
+    caption = "https://population.un.org/",
+    parse = TRUE
+  ) +
+  xlab(NULL) + ylab(NULL) + scale_y_continuous(labels = comma)
+```
+

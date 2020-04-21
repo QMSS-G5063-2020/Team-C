@@ -1,0 +1,43 @@
+---
+title: "TOP_3"
+author: "Richa Gupta"
+date: "21/04/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+install.packages("wbstats")
+library(wbstats)
+library(tidyverse)
+```
+
+```{r}
+# SM.POP.NETM - Net migration
+net_migration <- wb(country = "countries_only",indicator = "SM.POP.NETM",  startdate = "2000", enddate = 2020)
+# Most recent year is 2017
+
+net_migration_2017 <- net_migration %>%
+  filter(date == 2017)
+
+
+pop_data <- wb(country = "countries_only",
+               indicator = "SP.POP.TOTL", startdate = 2000, enddate = 2020)
+# Most recent data is 2018. But I am subsetting for 2017 to match the latest data of migration.
+
+pop_data_2017 <- pop_data %>%
+  filter(date == 2017)
+
+pop_migration_2017 <- left_join(net_migration_2017, pop_data_2017, by = "country")
+
+# Calculating net migration per population of 1000 people 
+pop_migration_2017$normalized_migration <- (pop_migration_2017$value.x / pop_migration_2017$value.y) * 1000
+
+pop_migration_2017 %>%
+  select(country, normalized_migration) %>%
+  arrange(normalized_migration) %>%
+  head(n = 10)
+```
