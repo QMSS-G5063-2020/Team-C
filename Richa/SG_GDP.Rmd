@@ -16,9 +16,12 @@ library(dplyr)
 library(scales)
 setwd(getwd())
 
-df_gdp_pp <- read_csv("Data/GDP_PP/GDP_PP.csv", skip = 4, trim_ws = TRUE, na = "NA")
+df_gdp_pp <- read_csv("~/Desktop/dataviz/final_project/GDP_PP.csv", skip = 4, trim_ws = TRUE, na = "NA")
 df_gdp_pp <- data.frame(df_gdp_pp)
+```
 
+
+```{r}
 # Source- https://www.worldbank.org/
 ```
 ```{r}
