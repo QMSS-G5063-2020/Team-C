@@ -1,0 +1,80 @@
+---
+title: "World Bank Net Migration Analysis"
+author: "Jose Andres Montes Lopez"
+date: "4/19/2020"
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#install.packages('wbstats')
+#install.packages('tidyverse')
+library(wbstats)
+library(tidyverse)
+library(kableExtra)
+library(shiny)
+```
+
+```{r,echo=FALSE, message=FALSE}
+df <- wb(country = "countries_only",indicator = "SM.POP.NETM",  startdate = 1960, enddate = "2018")
+
+#filters out virgin islands
+df <- filter(df, df$country!="Virgin Islands (U.S.)") 
+
+#SM.POP.TOTL (immigration )
+#SM.POP.NETM (net migration)
+
+#adds region throug joining on iso3c code 
+df <- df %>%
+  dplyr::left_join(wbstats::wbcountries() %>%                         
+                     dplyr::select(iso3c, region)) %>%
+  tidyr::pivot_wider(
+    id_cols = c("date", "country", "region"), 
+    names_from = indicator, 
+    values_from = value
+    )
+```
+
+
+```{r,echo=FALSE}
+
+ui <- fluidPage(
+  titlePanel("World Net Migration"),
+  shinythemes::themeSelector(),
+  sidebarLayout(
+    sidebarPanel(
+#      inputPanel(
+#  selectInput("Year", label = "Select Year:",
+#              choices = as.numeric(unique(df$date)), 
+#              selected = max(as.numeric(unique(df$date)))),
+       selectInput("Country", label = "Select country:",
+              choices = unique(df$country), 
+              selected = "Mexico"),
+       selectInput("Region", label = "Select Region:",
+              choices = unique(df$region), 
+              selected = "Latin America & Caribbean"),
+       sliderInput("Year", label = "Select Year:",
+              min = min(as.numeric(unique(df$date))), 
+              max = max(as.numeric(unique(df$date))), 
+              value = max(as.numeric(unique(df$date))), 
+              step = 5,
+              ticks = FALSE,
+              sep="")),
+    mainPanel(DT::DTOutput("df_table"))
+))
+```
+
+```{r,echo=FALSE}
+
+server <- function(input,output){
+  output$df_table <- DT::renderDT({
+    filter(df,df$date==input$Year&df$region==input$Region&df$country==input$Country)
+    })
+    }
+```
+
+```{r,echo=FALSE}
+shinyApp(ui = ui, server = server)
+```
+

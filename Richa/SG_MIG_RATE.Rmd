@@ -1,0 +1,38 @@
+---
+title: "SG_MIG_RATE"
+author: "Richa Gupta"
+date: "14/04/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(readxl)
+library(ggplot2)
+library(dplyr)
+library(scales)
+library(tidyr)
+setwd(getwd())
+
+df_mig_rates <- read_xlsx("Data/migration_rate.xlsx", skip = 1, trim_ws = TRUE, na = "NA")
+#df_gdp_pp <- data.frame(df_gdp_pp)
+
+df_mig_rates <- gather(df_mig_rates, key = "year", value = "rate", -country)
+
+# Source- https://population.un.org/wpp/Download/Standard/Interpolated/
+# main source - https://population.un.org/
+```
+
+```{r}
+
+ggplot(df_mig_rates, aes(x = as.factor(year), y = rate, color = country)) +
+  geom_line(aes(group = 1)) + geom_point() + facet_grid(rows = vars(country)) +
+  labs(title = "Migration rate",
+       subtitle = "Migration rate changes",
+       caption = "https://population.un.org/", parse = TRUE) +
+  xlab(NULL) + ylab(NULL)
+```
+
