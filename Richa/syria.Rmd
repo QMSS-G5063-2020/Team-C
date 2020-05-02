@@ -1,0 +1,29 @@
+---
+title: "syria"
+output: html_document
+---
+
+After Syria gained its independence in 1946, political life in the country was highly unstable, owing in large measure to intense friction between the country’s social, religious, and political groups. In 1970 Syria came under the authoritarian rule of Pres. Hafiz al-Assad. After Assad’s death in 2000, his son Bashar al-Assad became president. Bashar al-Assad ultimately continued his father’s authoritarian style of governments to quash political dissent. Long-suppressed internal tensions led to the outbreak of the Syrian Civil War in 2011.
+
+```{r}
+library(wbstats)
+library(ggplot2)
+library(tidyverse)
+```
+
+```{r}
+gdp_data <- wb(country = "SYR",
+               indicator = c("NY.GDP.PCAP.KD.ZG") , startdate = 2000, enddate = 2017)
+gdp_data$date <- as.numeric(gdp_data$date)
+```
+
+```{r}
+gdp_data %>%
+  ggplot(aes(x = factor(date), y = value, group = 1)) + 
+  geom_line(group = 1) + ylab("GDP per capita growth") +xlab(NULL) +
+  geom_hline(yintercept = 0, color = "red")
+  # geom_segment(aes(x = 14.1, xend = 14.1, y = 0, yend = 10), color = "blue", size = 0.2)
+  # geom_text(aes(x=14.2, y=10, label="President Chavez dies."),size=2.5) +
+  # geom_segment(aes(x = 15, xend = 15, y = 0, yend = -7), color = "blue", size = 0.2) +
+  # geom_text(aes(x=14.5, y=-8, label="Central Bank\n confirms recession"),size=2.5)
+```

@@ -10,29 +10,38 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-library(readxl)
+library(wbstats)
 library(ggplot2)
 library(dplyr)
 library(scales)
 library(tidyr)
 setwd(getwd())
 
-df_mig_rates <- read_xlsx("Data/migration_rate.xlsx", skip = 1, trim_ws = TRUE, na = "NA")
-#df_gdp_pp <- data.frame(df_gdp_pp)
+# List of iso3 country codes
+need <- c("SSD", "SYR", "VEN")
 
-df_mig_rates <- gather(df_mig_rates, key = "year", value = "rate", -country)
-
-# Source- https://population.un.org/wpp/Download/Standard/Interpolated/
-# main source - https://population.un.org/
+# GDP Growth Rate
+mig_data <- wb(country = need, indicator = "SM.POP.NETM", startdate = 2000, enddate = 2020)
 ```
 
 ```{r}
-
-ggplot(df_mig_rates, aes(x = as.factor(year), y = rate, color = country)) +
+ggplot(mig_data, aes(x = as.factor(date), y = value, color = country)) +
   geom_line(aes(group = 1)) + geom_point() + facet_grid(rows = vars(country)) +
-  labs(title = "Migration rate",
-       subtitle = "Migration rate changes",
-       caption = "https://population.un.org/", parse = TRUE) +
+  labs(title = "Migration Flow",
+       subtitle = "changes in migration in last 20 years", parse = TRUE) +
   xlab(NULL) + ylab(NULL)
 ```
 
+
+
+## Explorations
+```{r}
+
+pov_data <- wb(country = "all", indicator = "SI.POV.NAHC", startdate = 2015, enddate = 2020)
+
+pov_data %>%
+  filter(date == 2019) %>%
+  select(country, value, date) %>%
+  arrange(value)
+
+```

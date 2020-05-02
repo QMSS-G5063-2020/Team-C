@@ -14,45 +14,109 @@ library(readr)
 library(ggplot2)
 library(dplyr)
 library(scales)
-setwd(getwd())
+library(wbstats)
+library(tidyverse)
 
-df_gdp_pp <- read_csv("Data/GDP_PP/GDP_PP.csv", skip = 4, trim_ws = TRUE, na = "NA")
-df_gdp_pp <- data.frame(df_gdp_pp)
+# Collecting population and total GDP data for last 10 years for all the countries
+pop_gdp_data <- wb(country = "countries_only",
+               indicator = c("SP.POP.TOTL","NY.GDP.MKTP.CD") , startdate = 2007, enddate = 2017)
 
-# Source- https://www.worldbank.org/
+iso3c_need <- c("SYR", "SSD", "VEN")
+
+### pop_gdp_data %>% filter(iso3c %in% iso3c_need) %>% group_by(country, indicator) %>% summarise(minyear = min(date), maxyear = max(date), count = n())
+
+# For South Sudan GDP data is till 2015, Syria is 2007 and Venezuela is 2014.
+
+# Filling data manually from https://countryeconomy.com/gdp/south-sudan
+pop_gdp_data <- rbind(pop_gdp_data, list("SSD", 2017, 3438, "NY.GDP.MKTP.CD", "GDP (current US$)", "SS", "South Sudan"))
+pop_gdp_data <- rbind(pop_gdp_data, list("SSD", 2016, 3443, "NY.GDP.MKTP.CD", "GDP (current US$)", "SS", "South Sudan"))
+pop_gdp_data <- rbind(pop_gdp_data, list("SSD", 2007, NA, "NY.GDP.MKTP.CD", "GDP (current US$)", "SS", "South Sudan"))
+
+# Syria
+pop_gdp_data <- rbind(pop_gdp_data, list("SYR", 2017, 15183, "NY.GDP.MKTP.CD", "GDP (current US$)", "SY", "Syrian Arab Republic"))
+pop_gdp_data <- rbind(pop_gdp_data, list("SYR", 2016, 12377, "NY.GDP.MKTP.CD", "GDP (current US$)", "SY", "Syrian Arab Republic"))
+pop_gdp_data <- rbind(pop_gdp_data, list("SYR", 2015, 19090, "NY.GDP.MKTP.CD", "GDP (current US$)", "SY", "Syrian Arab Republic"))
+pop_gdp_data <- rbind(pop_gdp_data, list("SYR", 2014, 23114, "NY.GDP.MKTP.CD", "GDP (current US$)", "SY", "Syrian Arab Republic"))
+pop_gdp_data <- rbind(pop_gdp_data, list("SYR", 2013, 27016, "NY.GDP.MKTP.CD", "GDP (current US$)", "SY", "Syrian Arab Republic"))
+pop_gdp_data <- rbind(pop_gdp_data, list("SYR", 2012, 73672, "NY.GDP.MKTP.CD", "GDP (current US$)", "SY", "Syrian Arab Republic"))
+pop_gdp_data <- rbind(pop_gdp_data, list("SYR", 2011, 67293, "NY.GDP.MKTP.CD", "GDP (current US$)", "SY", "Syrian Arab Republic"))
+pop_gdp_data <- rbind(pop_gdp_data, list("SYR", 2010, 60043, "NY.GDP.MKTP.CD", "GDP (current US$)", "SY", "Syrian Arab Republic"))
+pop_gdp_data <- rbind(pop_gdp_data, list("SYR", 2009, 53939, "NY.GDP.MKTP.CD", "GDP (current US$)", "SY", "Syrian Arab Republic"))
+pop_gdp_data <- rbind(pop_gdp_data, list("SYR", 2008, 52631, "NY.GDP.MKTP.CD", "GDP (current US$)", "SY", "Syrian Arab Republic"))
+
+# Venezuela 
+pop_gdp_data <- rbind(pop_gdp_data, list("VEN", 2017, 143841, "NY.GDP.MKTP.CD", "GDP (current US$)", "VE", "Venezuela, RB"))
+pop_gdp_data <- rbind(pop_gdp_data, list("VEN", 2016, 279249, "NY.GDP.MKTP.CD", "GDP (current US$)", "VE", "Venezuela, RB"))
+pop_gdp_data <- rbind(pop_gdp_data, list("VEN", 2015, 323595, "NY.GDP.MKTP.CD", "GDP (current US$)", "VE", "Venezuela, RB"))
+
 ```
+
+
 ```{r}
-need <- c("Lebanon", "Micronesia, Fed. Sts.", "Tonga", "Maldives", "Eritrea")
+pop_gdp_data <- pop_gdp_data %>%
+  select(!indicator)
+pop_gdp_data <- spread(pop_gdp_data, key = indicatorID, value = value)
+pop_gdp_data$gdp_pp <- pop_gdp_data$NY.GDP.MKTP.CD / pop_gdp_data$SP.POP.TOTL
+```
+
+```{r}
 
 # Identify the top 10 countries and the ranks of the countries we need in 2018.
-df_gdp_pp %>%
-  select(`Country.Name`, `X2018`) %>%
-  arrange(desc(`X2018`)) %>%
-  head(n = 20)
+top_10 <- pop_gdp_data %>%
+  filter(date == 2017) %>%
+  arrange(desc(gdp_pp)) %>%
+  head(n = 10) %>%
+  select(iso3c) %>%
+  as.list()
 
-top_10 <- c("Monaco", "Luxembourg", "Macao SAR, China", "Switzerland", "Norway",
-            "Ireland", "Iceland", "Qatar", "Singapore", "United States")
-
-
-df_gdp_pp_need <- df_gdp_pp %>%
-  filter(Country.Name %in% top_10 | Country.Name %in% need) %>%
-  select(`Country.Name`, `X2018`) %>%
-  arrange(desc(`X2018`))
+top_10
+```
 
 
-# GDP per capita is increasing at rate of 7.2% , 2011 value is 811.3760	
-df_gdp_pp_need$X2018[df_gdp_pp_need$Country.Name == "Eritrea"] <- 811.3760 * 1.072 * 7
+```{r}
+# Subset to countries that are needed for the plotting
+pop_gdp_data_subset <- pop_gdp_data %>%
+  filter(iso3c %in% iso3c_need | iso3c %in% top_10$iso3c)
+# Adding a tag to identify which countries are top10 and which are needed countries
+
+pop_gdp_data_subset$tag <- ifelse(pop_gdp_data_subset$iso3c %in% top_10$iso3c, "top10", "need")
+rm(pop_gdp_data)
+```
+
+
+```{r}
+pop_gdp_data_subset %>%
+  ggplot(aes(x = as.factor(date), y = gdp_pp, color = country, group = country)) +
+  geom_line() + geom_point() +
+  scale_y_continuous(labels = comma) +
+  labs(
+    title = "GDP per capita",
+    subtitle = "2017 (Top 10 countries along with top 3 emigration countries)",
+    caption = "https://www.worldbank.org/",
+    parse = TRUE
+  ) +
+  xlab(NULL) + ylab(NULL)
 
 ```
 
 ```{r}
-ggplot(df_gdp_pp_need) +
-  geom_bar(aes(x = reorder(Country.Name, X2018), y = X2018), stat = "identity") +
-  scale_y_continuous(labels = comma) +
-  labs(title = "GDP per capita",
-       subtitle = "2018 (Top 10 countries along with top 5 emigration countries)",
-       caption = "https://www.worldbank.org/", parse = TRUE) +
-  xlab(NULL) + ylab(NULL) +
-  coord_flip()
+# collecting data for poverty indicators
+# SI.POV.DDAY - Poverty headcount ratio at $1.90 a day (2011 PPP) (% of population)
+# SI.POV.LMIC - Poverty headcount ratio at $3.20 a day (2011 PPP) (% of population)
+# SI.POV.UMIC - Poverty headcount ratio at $5.50 a day (2011 PPP) (% of population)
+# SI.POV.NAHC - Poverty headcount ratio at national poverty lines (% of population)
+
+pov_data <- wb(country = iso3c_need,
+               indicator = c("SI.POV.NAHC" ,"SI.POV.DDAY","SI.POV.LMIC", "SI.POV.UMIC") , startdate = 2007, enddate = 2017)
 ```
 
+Since the most recent data is available is for South Sudan this plot only includes South Sudan.
+
+```{r}
+# Poverty headcount ratio at national poverty lines 
+
+pov_data %>%
+  filter(iso3c == "SSD" & indicatorID == "SI.POV.NAHC") %>%
+  ggplot() + geom_bar(aes(x = value, y = as.numeric(date)), stat = "identity") +
+  scale_y_reverse()
+```
