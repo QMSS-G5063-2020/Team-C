@@ -1,0 +1,49 @@
+---
+title: "R setup"
+author: "Jose Andres Montes Lopez"
+date: "4/28/2020"
+output: html_document
+---
+
+```{r}
+library(wbstats)
+library(tidyverse)
+library(kableExtra)
+library(shiny)
+```
+
+```{r,echo=FALSE, message=FALSE}
+world_spdf = readOGR(dsn= "data",layer="TM_WORLD_BORDERS_SIMPL-0.3")
+
+df <- wb(country = "countries_only",indicator = c("SM.POP.NETM","SP.POP.TOTL"),  startdate = 1962, enddate = 2017)
+
+#filters out non-countries
+df <- filter(df, df$country!="Virgin Islands (U.S.)") 
+df <- filter(df, df$country!="Puerto Rico") 
+
+#adds region through joining on iso3c code 
+df <- df %>%
+  dplyr::left_join(wbstats::wbcountries() %>%                         
+                     dplyr::select(iso3c, region)) %>%
+  tidyr::pivot_wider(
+    id_cols = c("date", "country", "region"), 
+    names_from = indicator, 
+    values_from = value
+    )
+
+#calculate per 1,000 rate
+df <- mutate(df,'Per 1,000 Rate' =(df$`Net migration` / df$`Population, total`)*1000) 
+
+#round rate to two decimal places
+df$`Per 1,000 Rate` <- round(df$`Per 1,000 Rate`, digits = 2)
+
+#categorizes outflow and inflow based on 0 threshold
+df <- mutate(df, 
+             type = case_when(
+               `Per 1,000 Rate` > 0  ~ "Inflow",
+               `Per 1,000 Rate` < 0  ~ "Outflow",
+               TRUE                  ~  "Data Not Avalilable"
+    )
+  )
+
+```

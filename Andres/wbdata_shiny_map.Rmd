@@ -1,0 +1,154 @@
+---
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#install.packages('wbstats')
+#install.packages('tidyverse')
+library(wbstats)
+library(tidyverse)
+library(shiny)
+library(leaflet)
+library(rgdal)
+```
+
+```{r,echo=FALSE, message=FALSE}
+df <- wb(country = "countries_only",indicator = c("SM.POP.NETM","SP.POP.TOTL"),  startdate = 1962, enddate = 2017)
+
+world_spdf = readOGR(dsn= "data",layer="TM_WORLD_BORDERS_SIMPL-0.3")
+```
+
+```{r, echo=FALSE,message=FALSE}
+#filters out non-countries
+df <- filter(df, df$country!="Virgin Islands (U.S.)") 
+df <- filter(df, df$country!="Puerto Rico") 
+
+#adds region through joining on iso3c code 
+df <- df %>%
+  dplyr::left_join(wbstats::wbcountries() %>%                         
+                     dplyr::select(iso3c, region)) %>%
+  tidyr::pivot_wider(
+    id_cols = c("date","iso3c", "country", "region"), 
+    names_from = indicator, 
+    values_from = value
+    )
+#calculate per 1,000 rate
+df <- mutate(df,'Per 1,000 Rate' =(df$`Net migration` / df$`Population, total`)*1000) 
+
+#round rate to two decimal places
+df$`Per 1,000 Rate` <- round(df$`Per 1,000 Rate`, digits = 1) 
+
+df <- mutate(df, 
+             type = case_when(
+               `Per 1,000 Rate` > 0  ~ "Inflow",
+               `Per 1,000 Rate` < 0  ~ "Outflow",
+               TRUE                  ~  "Data Not Avalilable or Marginal"
+    )
+  )
+
+
+#omits na
+#df <- na.omit(df)
+
+#merges country coordinates based on iso coding
+colnames(df)[colnames(df) == "iso3c"] <- "ISO3"
+combined <- world_spdf@data %>% 
+  left_join(df, by = c(ISO3 = "ISO3"))
+
+#adds merged data into sp df
+world_spdf@data <- combined
+
+```
+
+```{r}
+world_spdf_outflow <- world_spdf 
+world_spdf_outflow@data <- world_spdf_outflow@data %>% filter(date=="2017"&type=="Outflow")
+qpal_outflow <- colorQuantile("Reds",world_spdf_outflow@data$`Per 1,000 Rate`)
+
+```
+
+```{r}
+leaflet(world_spdf) %>% 
+ setView(lat=10, lng=0 , zoom=1) %>%
+##Add inflows migration
+ # Add country borders 
+ addPolygons(group = "Inflow",stroke = TRUE, smoothFactor = 0.5,
+             weight=1, color='#333333', opacity=0.5,
+  #fill based on immigration
+   fillColor = ~qpal_inflow(df_inflow$`Per 1,000 Rate`)) %>%
+  addLegend(group = "Inflow",values = df_inflow$`Per 1,000 Rate`,
+           pal = qpal_inflow,title = "Migration inflow Per 1000") %>%
+##Add outflows migration
+ addPolygons(group = "Outflow",stroke = TRUE, smoothFactor = 0.5,
+             weight=1, color='#333333', opacity=0.5,
+  #fill based on immigration
+   fillColor = ~qpal_outflow(df_outflow$`Per 1,000 Rate`)) %>%
+  addLegend(group = "Outflow",values = df_outflow$`Per 1,000 Rate`,
+            pal = qpal_outflow,title = "Migration outflow Per 1000") %>%
+ addLayersControl(overlayGroups = c("Inflow", "Outflow"))
+```
+
+
+```{r,echo=FALSE,message=FALSE,prompt=FALSE}
+
+ui <- fluidPage(
+  
+  titlePanel("World Net Migration"),
+  
+  fluidRow(
+    
+    column(4,
+           wellPanel(
+#              selectInput("Year", label = "Select Year:",
+#              choices = as.numeric(unique(df$date)), 
+#              selected = max(as.numeric(unique(df$date)))),
+#       selectInput("Country", label = "Select country:",
+#              choices = unique(df$country), 
+#              selected = "Mexico"),
+#       selectInput("Region", label = "Select Region:",
+#              choices = unique(df$region), 
+#              selected = "Latin America & Caribbean"),
+       sliderInput("Year", label = "Select Year:",
+              min = min(as.numeric(unique(df$date))), 
+              max = max(as.numeric(unique(df$date))), 
+              value = max(as.numeric(unique(df$date))), 
+              step = 5,
+              ticks = FALSE,
+              sep="")
+          )
+       ),
+
+    column(8,
+      leafletOutput("map")
+      )
+    )
+  )
+```
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE}
+
+server <- function(input,output){
+#  output$df_table <- DT::renderDT({
+#    filter(df,df$date==input$Year&df$region==input$Region)
+#    })
+
+#df_filtered <- 
+#    filter(df,df$date==input$Year)
+#qpal <- colorBin("Reds",df_filtered$`Per 1,000 Rate`, bins=5)
+
+
+output$map <- renderLeaflet({
+    leaflet(world_spdf) %>%
+      setView(lng = 10, lat = 0, zoom = 1) %>%
+    addPolygons(stroke = TRUE, smoothFactor = 0.5,weight=1, color='#333333', opacity=1)
+  })
+}
+#&df$country==input$Country
+```
+
+```{r,echo=FALSE}
+shinyApp(ui = ui, server = server)
+```
+

@@ -10,16 +10,22 @@ knitr::opts_chunk$set(echo = TRUE)
 #install.packages('wbstats')
 #install.packages('tidyverse')
 library(wbstats)
+library(Hmisc)
 library(tidyverse)
+library(rgdal)
+library(leaflet)
+world_spdf = readOGR(dsn= "data", 
+                     layer="TM_WORLD_BORDERS_SIMPL-0.3")
 ```
 
 ## WB Wrangling
 
 ```{r}
-net_migration <- wb(country = "countries_only",indicator = "SM.POP.NETM",  startdate = 1960, enddate = "2018")
+net_migration <- wb(country = "countries_only",indicator = c("SM.POP.NETM","SP.POP.TOTL"),  startdate = 1960, enddate = "2018")
 
 #selects relevant data and reorganizes dataframe
-net_migration <- filter(net_migration, net_migration$country!="Virgin Islands (U.S.)") 
+net_migration <- filter(net_migration, net_migration$country!="Virgin Islands (U.S.)")
+net_migration <- filter(net_migration, net_migration$country!="Puerto Rico")
 #SM.POP.TOTL (immigration )
 #SM.POP.NETM (net migration)
 
@@ -28,14 +34,42 @@ net_migration <- net_migration %>%
   dplyr::left_join(wbstats::wbcountries() %>%                         
                      dplyr::select(iso3c, region)) %>%
   tidyr::pivot_wider(
-    id_cols = c("date", "country", "region"), 
+    id_cols = c("date","iso3c", "country", "region"), 
     names_from = indicator, 
     values_from = value
     )
 
-filter(net_migration,net_migration$date==2012) %>% arrange(`Net migration`)
+#calculate rates per 1,000
+net_migration <- mutate(net_migration,'Normalized migration'=((net_migration$`Net migration` / net_migration$`Population, total`)*1000))
+
+#omit na but can try to impute (year & country)
+net_migration <- na.omit(net_migration)
+#net_migration$`Normalized migration` <- impute(net_migration$`Normalized migration`)
+
+#rounds rate to two decimal places
+net_migration$`Normalized migration` <- net_migration$`Normalized migration` %>% round(digits = 2)
+colnames(net_migration)[colnames(net_migration) == "iso3c"] <- "ISO3"
+
+# Merge the data to Shape Files
+combined <- world_spdf@data %>% 
+  left_join(net_migration, by = c(ISO3 = "ISO3"))
+world_spdf@data <- combined
 ```
+
 ```{r}
-filter(net_migration,net_migration$date==2012&net_migration$region=="Middle East & North Africa"&net_migration$country=="Bahrain")
+
+filter_m <- filter(net_migration, net_migration$date==2017)
+qpal <- colorBin("Reds",filter_m$`Normalized migration`, bins=5)
+
+leaflet(world_spdf) %>% 
+ setView(lat=10, lng=0 , zoom=1) %>%
+ # Add country borders 
+ addPolygons(stroke = TRUE, smoothFactor = 0.5,
+  weight=1, color='#333333', opacity=1,
+  #fill based on immigration
+   fillColor = ~qpal(filter_m$`Normalized migration`)) %>%
+ #add legend 
+ addLegend(values = filter_m$`Normalized migration`,pal = qpal,title = "Migration Per 1000")
+
 ```
 

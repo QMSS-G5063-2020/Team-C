@@ -1,7 +1,4 @@
 ---
-title: "World Bank Net Migration Analysis"
-author: "Jose Andres Montes Lopez"
-date: "4/19/2020"
 output: html_document
 runtime: shiny
 ---
@@ -11,21 +8,24 @@ knitr::opts_chunk$set(echo = TRUE)
 #install.packages('wbstats')
 #install.packages('tidyverse')
 library(wbstats)
-library(tidyverse)
 library(kableExtra)
 library(shiny)
+library(dplyr)
 ```
 
 ```{r,echo=FALSE, message=FALSE}
-df <- wb(country = "countries_only",indicator = "SM.POP.NETM",  startdate = 1960, enddate = "2018")
 
-#filters out virgin islands
+#access necessary datasets (wb and shapes of world)
+df <- wb(country = "countries_only",indicator = c("SM.POP.NETM","SP.POP.TOTL"),  startdate = 1962, enddate = 2017)
+world_spdf = readOGR(dsn= "data",layer="TM_WORLD_BORDERS_SIMPL-0.3")
+```
+
+```{r}
+#filters out non-countries
 df <- filter(df, df$country!="Virgin Islands (U.S.)") 
+df <- filter(df, df$country!="Puerto Rico") 
 
-#SM.POP.TOTL (immigration )
-#SM.POP.NETM (net migration)
-
-#adds region throug joining on iso3c code 
+#adds region through joining on iso3c code 
 df <- df %>%
   dplyr::left_join(wbstats::wbcountries() %>%                         
                      dplyr::select(iso3c, region)) %>%
@@ -34,6 +34,52 @@ df <- df %>%
     names_from = indicator, 
     values_from = value
     )
+df
+
+#calculate per 1,000 rate
+df <- mutate(df,'Per 1,000 Rate' =(df$`Net migration` / df$`Population, total`)*1000)
+
+df <- mutate(df, 
+             type = case_when(
+               `Per 1,000 Rate` > 0  ~ "Inflow",
+               `Per 1,000 Rate` < 0  ~ "Outflow",
+               TRUE                  ~  "Data Not Avalilable"
+    )
+  )
+
+#round rate to two decimal places
+df$`Per 1,000 Rate` <- round(df$`Per 1,000 Rate`, digits = 2) 
+
+#omits na
+df <- na.omit(df)
+
+#adds merged data into spdf
+colnames(df)[colnames(df) == "iso3c"] <- "ISO3"
+
+combined <- world_spdf@data %>% 
+  left_join(df, by = c(ISO3 = "ISO3"))
+world_spdf@data <- combined
+```
+
+```{r}
+df_outflow <- df %>% filter(date=="2017"&type=="Outflow")
+qpal_outflow <- colorNumeric("Reds",df_outflow$`Per 1,000 Rate`)
+
+df_inflow <- df %>% filter(date=="2017"&type=="Inflow")
+qpal_inflow <- colorBin("Blues",df_inflow$`Per 1,000 Rate`)
+```
+
+```{r}
+leaflet(world_spdf) %>% 
+ setView(lat=10, lng=0 , zoom=1) %>%
+ # Add country borders 
+ addPolygons(stroke = TRUE, smoothFactor = 0.5,
+  weight=1, color='#333333', opacity=1,
+  #fill based on immigration
+   fillColor = ~qpal_inflow(df_inflow$`Per 1,000 Rate`)) %>%
+ #add legend 
+ addLegend(values = df_inflow$`Per 1,000 Rate`,pal = qpal_inflow,title = "Migration Per 1000")
+
 ```
 
 
@@ -41,16 +87,15 @@ df <- df %>%
 
 ui <- fluidPage(
   titlePanel("World Net Migration"),
-  shinythemes::themeSelector(),
   sidebarLayout(
     sidebarPanel(
 #      inputPanel(
 #  selectInput("Year", label = "Select Year:",
 #              choices = as.numeric(unique(df$date)), 
 #              selected = max(as.numeric(unique(df$date)))),
-       selectInput("Country", label = "Select country:",
-              choices = unique(df$country), 
-              selected = "Mexico"),
+#       selectInput("Country", label = "Select country:",
+#              choices = unique(df$country), 
+#              selected = "Mexico"),
        selectInput("Region", label = "Select Region:",
               choices = unique(df$region), 
               selected = "Latin America & Caribbean"),
@@ -69,9 +114,10 @@ ui <- fluidPage(
 
 server <- function(input,output){
   output$df_table <- DT::renderDT({
-    filter(df,df$date==input$Year&df$region==input$Region&df$country==input$Country)
+    filter(df,df$date==input$Year&df$region==input$Region)
     })
-    }
+}
+#&df$country==input$Country
 ```
 
 ```{r,echo=FALSE}
