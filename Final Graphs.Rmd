@@ -1,0 +1,100 @@
+---
+title: "Final Project"
+author: "Maximilian Rychwalski"
+date: "5/1/2020"
+output: html_document
+---
+
+### United Nations
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(ggthemes)
+library(plotly)
+library(DT)
+```
+
+```{r}
+dfpop = read.csv("WPP2019_TotalPopulationBySex.csv")
+```
+
+### Population development in Syria (Medium vs. zero-migration)
+```{r}
+dfpop_syria <- dfpop %>%
+  filter(Variant %in% c("Medium", "Zero migration")) %>%
+  filter(Location == "Syrian Arab Republic")
+plot_popsyria <- ggplot(data=dfpop_syria, aes(x=Time, y=PopTotal, fill=Variant, color=Variant)) + geom_line()
+plot_popsyria
+```
+
+### Population development in South Sudan (Medium vs. zero-migration)
+```{r}
+dfpop_sudan <- dfpop %>%
+  filter(Variant %in% c("Medium", "Zero migration")) %>%
+  filter(Location == "South Sudan")
+plot_popsudan <- ggplot(data=dfpop_sudan, aes(x=Time, y=PopTotal, fill=Variant, color=Variant)) + geom_line()
+plot_popsudan
+```
+
+### Population development in Venezuela (Medium vs. zero-migration)
+```{r}
+dfpop_venezuela <- dfpop %>%
+  filter(Variant %in% c("Medium", "Zero migration")) %>%
+  filter(Location == "Venezuela (Bolivarian Republic of)")
+plot_popvenezuela <- ggplot(data=dfpop_venezuela, aes(x=Time, y=PopTotal, fill=Variant, color=Variant)) + geom_line()
+plot_popvenezuela
+```
+
+
+### Period Indicatiors (Medium)
+```{r}
+dfperiod_medium = read.csv("WPP2019_Period_Indicators_Medium.csv")
+dfm_countries <- dfperiod_medium %>%
+  filter(Location %in% c("Syrian Arab Republic", "Venezuela (Bolivarian Republic of)", "South Sudan"))
+```
+
+### Period Indicatiors (Zero Migration)
+```{r}
+dfperiod_zm = read.csv("WPP2019_Period_Indicators_OtherVariants.csv")
+dfzm_countries <- dfperiod_zm %>%
+  filter (Variant == "Zero migration") %>%
+  filter(Location %in% c("Syrian Arab Republic", "Venezuela (Bolivarian Republic of)", "South Sudan"))
+```
+
+### Total fertility in live births per woman (Medium)
+```{r}
+plot_tfrmcountries <- ggplot(data=dfm_countries, aes(x=MidPeriod, y=TFR, fill=Location, color=Location)) + geom_line()
+plot_tfrmcountries
+```
+
+### Total fertility in live births per woman (Zero migration)
+```{r}
+plot_tfrzmcountries <- ggplot(data=dfzm_countries, aes(x=MidPeriod, y=TFR, fill=Location, color=Location)) + geom_line()
+plot_tfrzmcountries
+```
+
+### Births in number of births including both sexes combined in thousands (Medium)
+```{r}
+plot_birthsmcountries <- ggplot(data=dfm_countries, aes(x=MidPeriod, y=Births, fill=Location, color=Location)) + geom_line()
+plot_birthsmcountries
+```
+
+### Births in number of births including both sexes combined in thousands (Zero migration)
+```{r}
+plot_birthszmcountries <- ggplot(data=dfzm_countries, aes(x=MidPeriod, y=Births, fill=Location, color=Location)) + geom_line()
+plot_birthszmcountries
+```
+
+### Deaths in number of births including both sexes combined in thousands (Medium)
+```{r}
+plot_deathsmcountries <- ggplot(data=dfm_countries, aes(x=MidPeriod, y=Deaths, fill=Location, color=Location)) + geom_line()
+plot_deathsmcountries
+```
+
+### Deaths in number of births including both sexes combined in thousands (Zero migration)
+```{r}
+plot_deathszmcountries <- ggplot(data=dfzm_countries, aes(x=MidPeriod, y=Deaths, fill=Location, color=Location)) + geom_line()
+plot_deathszmcountries
+```
