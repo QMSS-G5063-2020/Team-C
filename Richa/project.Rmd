@@ -4,11 +4,11 @@ author: "Jose Andres, Max, Richa Gupta, Sam"
 output: html_document
 ---
 
-```{r setup, include=FALSE, warning=FALSE, message=FALSE}
+```{r setup, include=FALSE, warning=FALSE, message=FALSE, prompt=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
 
 # Load packages.
-packages <- c("ggplot2", "tidyverse", "wbstats")
+packages <- c("ggplot2", "tidyverse", "wbstats", "rgdal", "leaflet")
 
 packages <- lapply(packages, FUN = function(x) {
   if(!require(x, character.only = TRUE)) {
@@ -16,6 +16,9 @@ packages <- lapply(packages, FUN = function(x) {
     library(x, character.only = TRUE)
   }
 })
+
+# Removing scientific notation
+options(scipen = 999)
 ```
 
 
@@ -23,7 +26,6 @@ packages <- lapply(packages, FUN = function(x) {
 
 ## Introduction {.tabset .tabset-fade .tabset-pills}
 
-### The world
 
 ```{r}
 # SM.POP.NETM - World bank indicator for Net migration- total number of migrants
@@ -79,8 +81,6 @@ We are removing Puerto Rico from our observations due to the fact that it is a p
 We are more interested in seeing the movement of people within countries and the reasons due to which this happens.
 
 
-
-### Code
 
 ## Venezuela {.tabset .tabset-fade .tabset-pills}
 

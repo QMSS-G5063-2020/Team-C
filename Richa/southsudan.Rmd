@@ -32,10 +32,90 @@ gdp_data %>%
 ```
 
 ```{r}
-mig_trend <- read_excel("Data/migration_trends.xlsx", sheet = 2, col_names = TRUE)
+# mig_trend <- read_excel("Data/migration_trends.xlsx", sheet = 2, col_names = TRUE)
 ```
 
 
+
 ```{r}
+# mig_ssu <- wbstats::wb(country = "SSD",indicator = c("SM.POP.NETM"),  startdate = "2000", enddate = "2020", return_wide = TRUE)
+# mig_ssu$date <- as.numeric(mig_ssu$date)
+```
+
+```{r}
+# ggplot(mig_ssu) +
+#   geom_line(aes(x = factor(date), y = SM.POP.NETM, group = 1)) +
+#   xlab(NULL) + ylab(NULL)
+```
+
+
+```{r, warning=FALSE, message=FALSE}
+# Importing migrant origin and destination numbers for South Sudan
+destination_data <- readxl::read_excel("Data/UN_MigrantStockByOriginAndDestination_2019.xlsx", sheet = 2, skip = 15, col_names = TRUE, trim_ws = TRUE)
+
+# Subsetting origin to South Sudan
+destination_data_ssu <- destination_data %>%
+  dplyr::filter(...3 == "South Sudan")
+
+destination_data_ssu$Total <- destination_data_ssu$Total %>%
+  as.numeric()
+
+# Subsetting origin to Syria and also 2018. This will be used in the map.
+destination_data_ssu_2019 <- destination_data_ssu %>%
+  dplyr::filter(...1 == 2019)
+
+# I am not interested in the first 9 columns. Only keeping columns which have data about the destination countries
+destination_data_ssu_2019 <- destination_data_ssu_2019[c(10:241)]
+
+# Making the table vertical- gather
+destination_data_ssu_2019 <- tidyr::gather(destination_data_ssu_2019, key = "country", value = "value")
+
+destination_data_ssu_2019$value <- destination_data_ssu_2019$value %>%
+  as.numeric()
+```
+
+```{r, warning=FALSE}
+
+destination_data_ssu %>%
+  ggplot() +
+  geom_point(aes(x = factor(...1), y = Total)) +
+  geom_line(aes(x = factor(...1), y = Total, group = 1)) +
+  ylab(NULL) + xlab(NULL)+
+  geom_label(aes(x = 4, y = 200000, label = "2005:\n North/South Comprehensive\nPeace Agreement signed"), size = 2.5) +
+  geom_segment(aes(x = 5.2, xend = 5.2, y = 0, yend = 400000), color = "blue", size = 0.2) +
+  geom_label(aes(x = 5.2, y = 200000, label = "2011:\n South Sudan\nis born"), size = 2.5) +
+  geom_segment(aes(x = 5.6, xend = 5.6, y = 0, yend = 600000), color = "blue", size = 0.2) +
+  geom_label(aes(x=5.6, y=450000, label="2013:\nCivil War\nerupts"),size=2.5) +
+  geom_segment(aes(x = 6.2, xend = 6.2, y = 0, yend = 857848), color = "blue", size = 0.2) +
+  geom_label(aes(x=6.2, y=300000, label="2016:\nUN claims ethnic\n cleansing in S. Sudan"),size=2.5)
+
+```
+
+
+
+```{r}
+# importing the country centroid data
+world <- rgdal::readOGR("Data/country_centroids_az8/country_centroids_az8.shp")
+
+# Merging data with shape file
+world_ssu <- merge(world, destination_data_ssu_2019, by.x = "sovereignt", by.y = "country", all.x = TRUE)
+
+content <- sprintf("<strong>%s</strong><br/>%g",
+                  world_ssu@data$sovereignt,
+                  world_ssu@data$value) %>% lapply(htmltools::HTML)
+
+leaflet::leaflet() %>%
+  setView(6.8770, 31.34165036, zoom = 4) %>%
+  addTiles(options = providerTileOptions(minZoom = 3, maxZoom = 5)) %>%
+  addCircles(data = world_ssu,
+             lat = world_ssu@data$Latitude,
+             lng = world_ssu@data$Longitude,
+             radius = world_ssu@data$value,
+             fillColor = world_ssu@data$value,
+             opacity = 0.8, fillOpacity = 0.7,
+             popup = content, label = content, labelOptions(
+                    style = list("font-weight" = "normal", padding = "3px 8px"),
+                    textsize = "15px",
+                    direction = "auto"))
 
 ```
