@@ -86,13 +86,20 @@ destination_data_ven %>%
   geom_segment(aes(x = 5.5, xend = 5.5, y = 0, yend = 1400000), color = "blue", size = 0.2) +
   geom_label(aes(x=5.5, y=1300000, label="2013:\nPresident Chavez dies.\nMaduro elected"),size=2.5) +
   geom_segment(aes(x = 5.8, xend = 5.8, y = 0, yend = 1400000), color = "blue", size = 0.2) +
-  geom_label(aes(x=6, y=1100000, label="2014:\nCentral Bank\n confirms recession"),size=2.5)
+  geom_label(aes(x=6, y=1100000, label="2014:\nCentral Bank\n confirms recession"),size=2.5) +
+  labs(
+    title = "Evolution of migration",
+    subtitle = "1990 - 2019",
+    caption = "source: World Bank, Global Poverty Working Group."
+  )
 ```
 
+A very large number of migrants from Venezuela are refugees and asylum seekers who have moved to other countries to search for a safe haven.
 
+This map shows the destinations of the refugees and asylum seekers from Venezuela in the year 2019.
 
 ```{r, message=FALSE}
-world <- rgdal::readOGR("Data/country_centroids_az8/country_centroids_az8.shp")
+world <- rgdal::readOGR("Data/country_centroids_az8/country_centroids_az8.shp", verbose = FALSE)
 
 world_ven <- merge(world, destination_data_ven_2019, by.x = "sovereignt", by.y = "country", all.x = TRUE)
 
