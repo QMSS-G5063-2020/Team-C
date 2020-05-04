@@ -13,7 +13,7 @@ library(shiny)
 ```
 
 ```{r,echo=FALSE, message=FALSE}
-world_spdf = readOGR(dsn= "data",layer="TM_WORLD_BORDERS_SIMPL-0.3")
+world_spdf = rgdal::readOGR(dsn= "data",layer="TM_WORLD_BORDERS_SIMPL-0.3")
 
 df <- wb(country = "countries_only",indicator = c("SM.POP.NETM","SP.POP.TOTL"),  startdate = 1962, enddate = 2017)
 
