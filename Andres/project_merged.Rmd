@@ -1,0 +1,192 @@
+---
+output: html_document
+---
+
+```{r setup, include=FALSE, warning=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+
+# Load packages.
+packages <- c("ggplot2", "tidyverse", "wbstats", "leaflet","rgdal","countrycode")
+
+packages <- lapply(packages, FUN = function(x) {
+  if(!require(x, character.only = TRUE)) {
+    install.packages(x, repos = "http://cran.us.r-project.org")
+    library(x, character.only = TRUE)
+  }
+})
+```
+
+
+# Migration Case Study: Analysis of Top 3 Migration Outflows {.tabset .tabset-fade}
+
+## Introduction {.tabset .tabset-fade .tabset-pills}
+
+### 2017 World Migration Flows
+
+```{r, message=FALSE, }
+myspdf = readOGR(dsn= "data",layer="TM_WORLD_BORDERS_SIMPL-0.3", verbose = FALSE)
+df <- wb(country = "countries_only",indicator = c("SM.POP.NETM","SP.POP.TOTL"),  
+         startdate = 2017, enddate = 2017)
+
+df <- df %>%
+  dplyr::left_join(wbstats::wbcountries() %>%                         
+                     dplyr::select(iso3c, region)) %>%
+  tidyr::pivot_wider(
+    id_cols = c("date","iso3c", "country", "region"), 
+    names_from = indicator, 
+    values_from = value
+    )
+
+#calculate per 1,000 rate and define categories based on zero threshold
+df <- mutate(df,'Per 1,000 Rate' =(df$`Net migration` / df$`Population, total`)*1000)
+
+#round rate to two decimal places
+df$`Per 1,000 Rate` <- round(df$`Per 1,000 Rate`, digits = 1) 
+
+#categorizes flows of migration
+df <- mutate(df, 
+             Type = case_when(
+               `Per 1,000 Rate` > 0  ~ "Inflow",
+               `Per 1,000 Rate` < 0  ~ "Outflow",
+               TRUE                  ~  "Data Not Avalilable"
+    )
+  )
+
+format_num = function(n){
+  case_when(
+    abs(n) >= 1e12 ~ paste(round(n/1e12), 'Tn'),
+    abs(n) >= 1e9 ~ paste(round(n/1e9), 'Bn'),
+    abs(n) >= 1e6 ~ paste(round(n/1e6), 'M'),
+    abs(n) >= 1e3 ~ paste(round(n/1e3), 'K'),
+    TRUE ~ as.character(n))
+}
+df$`Net migration` <- format_num(df$`Net migration`)
+df$`Population, total` <- format_num(df$`Population, total`)
+
+#adds merged data into spdf
+df$iso3c <- countrycode(df$iso3c, "iso3c", "iso3c", nomatch = NULL)
+myspdf$ISO3 <- countrycode(myspdf$ISO3, "iso3c","iso3c", nomatch = NULL)
+combined <- myspdf@data %>% 
+  left_join(df, by = c("ISO3" = "iso3c"))
+myspdf@data <- combined
+
+#coloring of palattes
+combined_outflow <- filter(combined,combined$Type=="Outflow")
+qpal_outflow <- colorBin("Reds",combined_outflow$`Per 1,000 Rate`, bins=4,reverse = TRUE)
+
+combined_inflow <- filter(combined,combined$Type=="Inflow")
+qpal_inflow <- colorBin("Blues",combined_inflow$`Per 1,000 Rate`,bins = c(2,4,8,16,32,160))
+
+#popup content
+content <- paste("<strong>Country:</strong>",myspdf$NAME,"<br/>",
+                 "<strong>Net Migration:</strong>",myspdf$`Net migration`,"<br/>",
+                 "<strong>Population:</strong>",myspdf$`Population, total`,"<br/>",
+                 "<strong>Rate Per 1000:</strong>", myspdf$`Per 1,000 Rate`,"People","<br/>")
+```
+
+```{r, warning=FALSE,message=FALSE, fig.align="center"}
+leaflet(myspdf,options = leafletOptions(zoomControl = TRUE, minZoom = 0, maxZoom = 4)) %>%
+  addProviderTiles(providers$MapBox) %>%
+  fitBounds(~-100,-50,~80,80) %>%
+  setView(lat = 10, lng=0, zoom = 1) %>%
+ #add fill for default
+  addPolygons(stroke = TRUE, smoothFactor = 0.5,
+              weight=1, color='#333333', opacity=1, popup = content) %>%
+ #add fill for outflow
+  addPolygons(group = "Outflow",stroke = TRUE, smoothFactor = 0.5,
+              weight=1, color='#333333', opacity=1, popup = content, 
+              fillColor = ~qpal_outflow(`Per 1,000 Rate`)) %>%
+ #add legend for outflow
+  addLegend(group = "Outflow",values = combined_outflow$`Per 1,000 Rate`,
+            pal = qpal_outflow,
+            title = "Migration Per 1000") %>%
+ #add fill for inflow
+  addPolygons(group = "Inflow",stroke = TRUE, smoothFactor = 0.5,
+              weight=1, color='#333333', opacity=1, popup = content,
+              fillColor = ~qpal_inflow(`Per 1,000 Rate`)) %>%
+ #add legend for inflow
+  addLegend(group = "Inflow",values = combined_inflow$`Per 1,000 Rate`,
+            pal = qpal_inflow,
+            title = "Migration Per 1000") %>%
+ #control layer
+  addLayersControl(overlayGroups = c("Outflow","Inflow"),  position = "bottomright",
+                   options = layersControlOptions(collapsed = FALSE))
+```
+
+### The world
+
+```{r}
+# SM.POP.NETM - World bank indicator for Net migration- total number of migrants
+# SP.POP.TOTL - World bank indicator for Total population- total population
+mig_pop <- wbstats::wb(country = "countries_only",indicator = c("SM.POP.NETM", "SP.POP.TOTL"),  startdate = "2007", enddate = "2020", return_wide = TRUE)
+
+# Variable to calcualte migration per population
+mig_pop$mig_by_pop <- mig_pop$SM.POP.NETM / mig_pop$SP.POP.TOTL
+
+# Converting date to integer from string
+mig_pop$date <- mig_pop$date %>% as.numeric()
+
+# mig_pop %>%
+#   ggplot(aes(x = date, y = mig_by_pop, color = country)) +
+#   geom_point() +
+#   geom_line(data = mig_pop[!is.na(mig_pop$mig_by_pop),], aes(group = country)) +
+#   theme(legend.position = "none")
+
+```
+The most recent data in World Bank is available for the year 2017.
+
+```{r}
+# Extract top 3 and least 3 countries for labels
+top3 <-  mig_pop %>%
+  filter(date == 2017 & !is.na(mig_by_pop)) %>%
+  arrange(desc(mig_by_pop)) %>%
+  head(n = 3) %>%
+  select(country, mig_by_pop)
+
+least4 <- mig_pop %>%
+  filter(date == 2017 & !is.na(mig_by_pop)) %>%
+  arrange(desc(mig_by_pop)) %>%
+  tail(n = 4) %>%
+  select(country, mig_by_pop)
+
+mig_pop %>%
+  filter(date == 2017) %>%
+  ggplot() +
+  geom_bar(aes(y = mig_by_pop, x = country), stat = "identity", na.rm = TRUE) +
+  xlab(NULL) + ylab("migration per person in the country") +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank()) +
+  geom_text(data = top3, aes(x = country, y = mig_by_pop, label = country), color = "green", check_overlap = TRUE, vjust = 0, nudge_y = 0.01) +
+  geom_text(data = least4, aes(x = country, y = mig_by_pop, label = country), color = "red", check_overlap = TRUE, vjust = 0, nudge_y = -0.01)
+  
+```
+
+This graph shows that some countries stand out with higher than normal immigration like Bahrain, Maldives and Oman whereas some other countries are standing out because of all the people moving out of them. For example in Syria, for every 100 people in the country 12 people are moving to other countries.
+
+We are interested in understanding what are the reasons that are making these people move out of their home countries.
+
+We are removing Puerto Rico from our observations due to the fact that it is a part of United States and most of the migration that Puerto Rico faces is still inside of the country.
+
+We are more interested in seeing the movement of people within countries and the reasons due to which this happens.
+
+
+
+### Code
+
+## Venezuela {.tabset .tabset-fade .tabset-pills}
+
+```{r child='venezuela.Rmd'}
+```
+
+## South Sudan {.tabset .tabset-fade .tabset-pills}
+
+```{r child = 'southsudan.Rmd'}
+```
+
+## Syria {.tabset .tabset-fade .tabset-pills}
+
+```{r child = 'syria.Rmd'}
+```
+
+
+
