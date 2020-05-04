@@ -25,7 +25,7 @@ options(scipen = 999)
 ```
 
 
-# The plight of migration {.tabset .tabset-fade}
+# Migration Story {.tabset .tabset-fade}
 
 ## Introduction {.tabset .tabset-fade .tabset-pills}
 
