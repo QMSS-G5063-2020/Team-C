@@ -20,7 +20,8 @@ options(scipen = 999)
 
 ```
 
-# Migration Case Study: Analysis of sdaksdjakls Top 3 Migration Outflows {.tabset .tabset-fade}
+
+# Migration Case Study: Analysis of Top 3 Migration Outflows {.tabset .tabset-fade}
 
 ## Introduction {.tabset .tabset-fade .tabset-pills}
 
