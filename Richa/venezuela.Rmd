@@ -92,50 +92,66 @@ destination_data_ven %>%
 
 
 ```{r, message=FALSE}
-# Joining the destination data of 2018 with the shape file
-
-# Changing the USA (INS/DHS) to United States and United Kingdom of Great Britain and Northern Ireland to United Kingdom to match shape file names
-
-#destination_data_ven_2018$destination[destination_data_ven_2018$destination == "USA (INS/DHS)"] <- "United States"
-#destination_data_ven_2018$destination[destination_data_ven_2018$destination == "United Kingdom of Great Britain and Northern Ireland"] <- "United Kingdom"
-
-# World_ven <- merge(World, destination_data_ven_2019, by.x = "sovereignt", by.y = "country", all.x = TRUE)
-# World_ven$is_ven <- ifelse(World_ven$sovereignt == "Venezuela", 1, 0)
-# 
-# tmap_mode("view")
-# data(World_ven)
-# tm_shape(World_ven) +
-#   tm_polygons("is_ven") + 
-#   tm_bubbles(size = "value", col = "value", alpha = 0.5) +
-#   tm_legend(show = FALSE) +
-#   tm_view(alpha = 1, set.zoom.limits = c(3,5), basemaps = "Stamen.Watercolor")
-
-
-## world <- read.csv("Data/country_centroids_az8.csv")
-
-
 world <- rgdal::readOGR("Data/country_centroids_az8/country_centroids_az8.shp")
 
 world_ven <- merge(world, destination_data_ven_2019, by.x = "sovereignt", by.y = "country", all.x = TRUE)
 
+world_ven_ven <- world_ven@data %>%
+  filter(sovereignt == "Venezuela")
+
 content <- sprintf("<strong>%s</strong><br/>%g",
-                  world_ven@data$sovereignt,
-                  world_ven@data$value) %>% lapply(htmltools::HTML)
+                  world_ven$sovereignt,
+                  world_ven$value) %>% lapply(htmltools::HTML)
+
+group <- c()
+lng <- c()
+lat <- c()
+groupval = 1
+
+for(i in 1:nrow(world_ven)){
+  # If there is a connection between destination and origin country
+  if(!is.na(world_ven$value[i])){
+    # Enter origin country first
+    group <- c(group, groupval)
+    lat <- c(lat, world_ven_ven$Latitude)
+    lng <- c(lng, world_ven_ven$Longitude)
+    
+    # Enter destination country for same groupvalue
+    group <- c(group, groupval)
+    lat <- c(lat, world_ven$Latitude[i])
+    lng <- c(lng, world_ven$Longitude[i])
+    
+    # Increment group val
+    groupval = groupval + 1
+  }
+}
+
+df_ven <- data.frame(group=group, lng=lng, lat=lat)
+
+pal <- colorNumeric("Blues", df_ven$group)
 
 leaflet::leaflet() %>%
-  setView(-66.1818412311, 7.12422421273, zoom = 4) %>%
-  addTiles(options = providerTileOptions(minZoom = 3, maxZoom = 5)) %>%
+  setView(-66.1818412311, 7.12422421273, zoom = 2) %>%
+  addTiles(options = providerTileOptions(minZoom = 2, maxZoom = 5)) %>%
   addCircles(data = world_ven,
-             lat = world_ven@data$Latitude,
-             lng = world_ven@data$Longitude,
-             radius = world_ven@data$value,
-             fillColor = world_ven@data$value,
+             lat = world_ven$Latitude,
+             lng = world_ven$Longitude,
+             radius = world_ven$value,
+             fillColor = world_ven$value,
              opacity = 0.8, fillOpacity = 0.7,
              popup = content, label = content, labelOptions(
                     style = list("font-weight" = "normal", padding = "3px 8px"),
                     textsize = "15px",
-                    direction = "auto")) #%>%
-  #addMarkers(lat = -66.1818412311, lng = 7.12422421273, popup = "Venezuela", label = "Venezuela")
+                    direction = "auto")) %>%
+  addPolylines(data = df_ven,
+               lng = df_ven$lng,
+               lat = df_ven$lat,
+               group = df_ven$group,
+               color = pal(df_ven$group),
+               opacity = 0.1,
+               weight = 1,
+               fillOpacity = df_ven$group,
+               fillColor = pal(df_ven$group))
   
   
 ```

@@ -12,40 +12,41 @@ library(wbstats)
 library(ggplot2)
 library(tidyverse)
 library(readxl)
+library(dplyr)
+library(leaflet)
+```
+
+
+
+
+```{r}
+pov_data_ssu <- wbstats::wb(country = "SSD", 
+                            indicator = "SI.POV.NAHC", startdate = 2009, enddate = 2020, return_wide = TRUE)
+pov_data_ssu$date <- pov_data_ssu$date %>%
+  as.numeric()
+
+ggplot2::ggplot(pov_data_ssu) +
+  ggplot2::geom_bar(aes(x = factor(date), y = SI.POV.NAHC), stat = "identity") +
+  xlab(NULL) + ylab(NULL) +
+  labs(title = "%age of people living below poverty line",
+       caption = "source: World Bank, Global Poverty Working Group.", parse = TRUE)
+
 ```
 
 ```{r}
-gdp_data <- wb(country = "SSD",
+gdp_data_ssu <- wbstats::wb(country = "SSD",
                indicator = c("NY.GDP.PCAP.KD.ZG") , startdate = 2000, enddate = 2017)
-gdp_data$date <- as.numeric(gdp_data$date)
+gdp_data_ssu$date <- as.numeric(gdp_data_ssu$date)
 ```
 
 ```{r}
-gdp_data %>%
+gdp_data_ssu %>%
   ggplot(aes(x = factor(date), y = value, group = 1)) + 
-  geom_line(group = 1) + ylab("GDP per capita growth") +xlab(NULL) +
+  geom_line(group = 1) + ylab("GDP per capita growth") +xlab(NULL) + ylab(NULL) +
   geom_hline(yintercept = 0, color = "red") +
-  geom_segment(aes(x = 3.5, xend = 3.5, y = 0, yend = -40), color = "blue", size = 0.2) +
-  geom_text(aes(x=3.5, y=-42, label="Gain \n independence"),size=2.5)
-  #geom_segment(aes(x = 3.5, xend = 23, y = 0, yend = -7), color = "blue", size = 0.2) +
-  #geom_text(aes(x=14.5, y=-8, label="Central Bank\n confirms recession"),size=2.5)
-```
-
-```{r}
-# mig_trend <- read_excel("Data/migration_trends.xlsx", sheet = 2, col_names = TRUE)
-```
-
-
-
-```{r}
-# mig_ssu <- wbstats::wb(country = "SSD",indicator = c("SM.POP.NETM"),  startdate = "2000", enddate = "2020", return_wide = TRUE)
-# mig_ssu$date <- as.numeric(mig_ssu$date)
-```
-
-```{r}
-# ggplot(mig_ssu) +
-#   geom_line(aes(x = factor(date), y = SM.POP.NETM, group = 1)) +
-#   xlab(NULL) + ylab(NULL)
+  labs(title = "GDP Growth Rate",
+       subtitle = "Movement of GDP per capita growth rate from 2009-2015",
+       caption = "source: World Bank, Global Poverty Working Group.", parse = TRUE)
 ```
 
 
@@ -100,22 +101,59 @@ world <- rgdal::readOGR("Data/country_centroids_az8/country_centroids_az8.shp")
 # Merging data with shape file
 world_ssu <- merge(world, destination_data_ssu_2019, by.x = "sovereignt", by.y = "country", all.x = TRUE)
 
+world_ssu_ssu <- world_ssu@data %>%
+  filter(sovereignt == "South Sudan")
+
+group <- c()
+lng <- c()
+lat <- c()
+groupval = 1
+
+for(i in 1:nrow(world_ssu)){
+  # If there is a connection between destination and origin country
+  if(!is.na(world_ssu$value[i])){
+    # Enter origin country first
+    group <- c(group, groupval)
+    lat <- c(lat, world_ssu_ssu$Latitude)
+    lng <- c(lng, world_ssu_ssu$Longitude)
+    
+    # Enter destination country for same groupvalue
+    group <- c(group, groupval)
+    lat <- c(lat, world_ssu$Latitude[i])
+    lng <- c(lng, world_ssu$Longitude[i])
+    
+    # Increment group val
+    groupval = groupval + 1
+  }
+}
+
+df <- data.frame(group=group, lng=lng, lat=lat)
+
+pal <- colorNumeric("Blues", df$group)
+
 content <- sprintf("<strong>%s</strong><br/>%g",
-                  world_ssu@data$sovereignt,
-                  world_ssu@data$value) %>% lapply(htmltools::HTML)
+                  world_ssu$sovereignt,
+                  world_ssu$value) %>% lapply(htmltools::HTML)
 
 leaflet::leaflet() %>%
   setView(6.8770, 31.34165036, zoom = 4) %>%
   addTiles(options = providerTileOptions(minZoom = 3, maxZoom = 5)) %>%
   addCircles(data = world_ssu,
-             lat = world_ssu@data$Latitude,
-             lng = world_ssu@data$Longitude,
-             radius = world_ssu@data$value,
-             fillColor = world_ssu@data$value,
+             lat = world_ssu$Latitude,
+             lng = world_ssu$Longitude,
+             radius = world_ssu$value,
+             fillColor = world_ssu$value,
              opacity = 0.8, fillOpacity = 0.7,
              popup = content, label = content, labelOptions(
                     style = list("font-weight" = "normal", padding = "3px 8px"),
                     textsize = "15px",
-                    direction = "auto"))
+                    direction = "auto")) %>%
+  addPolylines(data = df,
+               lng = df$lng,
+               lat = df$lat,
+               group = df$group,
+               color = pal(df$group),
+               opacity = 0.3,
+               weight = 1)
 
 ```
