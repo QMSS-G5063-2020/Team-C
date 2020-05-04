@@ -9,23 +9,25 @@ After Syria gained its independence in 1946, political life in the country was h
 library(wbstats)
 library(ggplot2)
 library(tidyverse)
+library(lubridate)
+library(hrbrthemes)
+library(viridis)
 ```
 
 ```{r}
-gdp_data <- wb(country = "SYR",
+gdp_data_syr <- wbstats::wb(country = "SYR",
                indicator = c("NY.GDP.PCAP.KD.ZG") , startdate = 2000, enddate = 2017)
-gdp_data$date <- as.numeric(gdp_data$date)
+gdp_data_syr$date <- as.numeric(gdp_data_syr$date)
 ```
 
 ```{r}
-gdp_data %>%
+gdp_data_syr %>%
   ggplot(aes(x = factor(date), y = value, group = 1)) + 
   geom_line(group = 1) + ylab("GDP per capita growth") +xlab(NULL) +
-  geom_hline(yintercept = 0, color = "red")
-  # geom_segment(aes(x = 14.1, xend = 14.1, y = 0, yend = 10), color = "blue", size = 0.2)
-  # geom_text(aes(x=14.2, y=10, label="President Chavez dies."),size=2.5) +
-  # geom_segment(aes(x = 15, xend = 15, y = 0, yend = -7), color = "blue", size = 0.2) +
-  # geom_text(aes(x=14.5, y=-8, label="Central Bank\n confirms recession"),size=2.5)
+  geom_hline(yintercept = 0, color = "red") +
+  labs(title = "GDP Growth Rate",
+       subtitle = "Movement of GDP per capita growth rate from 2000-2007",
+       caption = "source: World Bank, Global Poverty Working Group.", parse = TRUE)
 ```
 
 ```{r}
@@ -93,22 +95,92 @@ world <- rgdal::readOGR("Data/country_centroids_az8/country_centroids_az8.shp")
 # Merging data with shape file
 world_syr <- merge(world, destination_data_syr_2019, by.x = "sovereignt", by.y = "country", all.x = TRUE)
 
+world_syr_syr <- world_syr@data %>%
+  dplyr::filter(sovereignt == "Syria")
+
+group <- c()
+lng <- c()
+lat <- c()
+groupval = 1
+
+for(i in 1:nrow(world_syr)){
+  # If there is a connection between destination and origin country
+  if(!is.na(world_syr$value[i])){
+    # Enter origin country first
+    group <- c(group, groupval)
+    lat <- c(lat, world_syr_syr$Latitude)
+    lng <- c(lng, world_syr_syr$Longitude)
+    
+    # Enter destination country for same groupvalue
+    group <- c(group, groupval)
+    lat <- c(lat, world_syr$Latitude[i])
+    lng <- c(lng, world_syr$Longitude[i])
+    
+    # Increment group val
+    groupval = groupval + 1
+  }
+}
+
+df_syr <- data.frame(group=group, lng=lng, lat=lat)
+
+pal <- colorNumeric("Blues", df_syr$group)
+
 content <- sprintf("<strong>%s</strong><br/>%g",
-                  world_syr@data$sovereignt,
-                  world_syr@data$value) %>% lapply(htmltools::HTML)
+                  world_syr$sovereignt,
+                  world_syr$value) %>% lapply(htmltools::HTML)
 
 leaflet::leaflet() %>%
-  setView(33.510414, 36.278336, zoom = 4) %>%
-  addTiles(options = providerTileOptions(minZoom = 3, maxZoom = 5)) %>%
+  setView(lng = 38.50788, lat = 35.02547, zoom = 2) %>%
+  addTiles(options = providerTileOptions(minZoom = 2, maxZoom = 5)) %>%
   addCircles(data = world_syr,
-             lat = world_syr@data$Latitude,
-             lng = world_syr@data$Longitude,
-             radius = world_syr@data$value,
-             fillColor = world_syr@data$value,
+             lat = world_syr$Latitude,
+             lng = world_syr$Longitude,
+             radius = world_syr$value,
+             fillColor = world_syr$value,
              opacity = 0.8, fillOpacity = 0.7,
              popup = content, label = content, labelOptions(
                     style = list("font-weight" = "normal", padding = "3px 8px"),
                     textsize = "15px",
-                    direction = "auto"))
+                    direction = "auto")) %>%
+  addPolylines(data = df_syr,
+               lng = df_syr$lng,
+               lat = df_syr$lat,
+               group = df_syr$group,
+               color = pal(df_syr$group),
+               opacity = 0.1,
+               weight = 1,
+               fillOpacity = df_syr$group,
+               fillColor = pal(df_syr$group))
+  
+
+```
+
+```{r}
+# Loading casuality data
+cas_syr <- read.csv("Data/VDC_Syria_CASREP.csv", stringsAsFactors = FALSE)
+
+# converting date into year
+cas_syr$deathdate <- cas_syr$deathdate %>%
+  lubridate::as_date() %>%
+  lubridate::year()
+
+# Aggregating the data, Selecting only civilians
+cas_syr <- cas_syr %>%
+  filter(status == "Civilian") %>%
+  group_by(deathdate) %>%
+  summarise(count = n())
+
+cas_syr %>%
+  arrange(deathdate) %>%
+  ggplot(aes(x=factor(deathdate), y=count, size=count, fill=factor(count))) +
+    geom_point(alpha=0.5, shape=21, color="black") +
+    scale_fill_viridis(discrete=TRUE, guide=FALSE, option="A") +
+    theme_ipsum() +
+    theme(legend.position="bottom") +
+    ylab("Deaths") +
+    xlab(NULL)+
+    theme(legend.position = "none") +
+    labs(title = "Civilian deaths due to the war (2011-2019)",
+       caption = "source: Casualty Reports from the Violations Documentation Center in Syria.", parse = TRUE)
 
 ```

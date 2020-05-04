@@ -6,7 +6,7 @@ output: html_document
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
 
 # Load packages.
-packages <- c("ggplot2", "tidyverse", "wbstats", "leaflet","rgdal","countrycode")
+packages <- c("ggplot2", "tidyverse", "wbstats", "rgdal", "leaflet", "dplyr", "lubridate", "hrbrthemes", "viridis","countrycode")
 
 packages <- lapply(packages, FUN = function(x) {
   if(!require(x, character.only = TRUE)) {
@@ -136,6 +136,15 @@ mig_pop$date <- mig_pop$date %>% as.numeric()
 #   theme(legend.position = "none")
 
 ```
+
+*The Beginning*
+
+The number of international migrants in 2019 was estimated at 270 million. According to migrant data collected in 2017, one in every 30 people in this world is living outside of their country of birth.
+
+Nearly two-thirds of the migrants are looking for work. But there have been massive displacements due to ongoing conflicts and violence. IOM’s Internal Displacement Monitoring Centre has said that a total of 41.3 million people were forced to flee their homes at the end of 2018 – a record since monitoring began in 1998.
+
+We were interested in exploring more about this topic.
+
 The most recent data in World Bank is available for the year 2017.
 
 ```{r}
