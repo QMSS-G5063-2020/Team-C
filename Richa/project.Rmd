@@ -2,7 +2,7 @@
 output: html_document
 ---
 
-```{r setup, include=FALSE, warning=FALSE, message=FALSE}
+```{r setup, include=FALSE, warning=FALSE, message=FALSE, prompt=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
 
 # Load packages.
@@ -14,8 +14,11 @@ packages <- lapply(packages, FUN = function(x) {
     library(x, character.only = TRUE)
   }
 })
-```
 
+# Removing scientific notation
+options(scipen = 999)
+
+```
 
 # Migration Case Study: Analysis of Top 3 Migration Outflows {.tabset .tabset-fade}
 
@@ -170,8 +173,6 @@ We are removing Puerto Rico from our observations due to the fact that it is a p
 We are more interested in seeing the movement of people within countries and the reasons due to which this happens.
 
 
-
-### Code
 
 ## Venezuela {.tabset .tabset-fade .tabset-pills}
 

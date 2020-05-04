@@ -27,3 +27,88 @@ gdp_data %>%
   # geom_segment(aes(x = 15, xend = 15, y = 0, yend = -7), color = "blue", size = 0.2) +
   # geom_text(aes(x=14.5, y=-8, label="Central Bank\n confirms recession"),size=2.5)
 ```
+
+```{r}
+# mig_syr <- wbstats::wb(country = "SYR",indicator = c("SM.POP.NETM"),  startdate = "2000", enddate = "2020", return_wide = TRUE)
+# mig_syr$date <- as.numeric(mig_syr$date)
+```
+
+```{r}
+# ggplot(mig_syr) +
+#   geom_line(aes(x = factor(date), y = SM.POP.NETM, group = 1)) +
+#   xlab(NULL) + ylab(NULL)
+```
+
+
+```{r, warning=FALSE, message=FALSE}
+# Importing migrant origin and destination numbers for Syria
+destination_data <- readxl::read_excel("Data/UN_MigrantStockByOriginAndDestination_2019.xlsx", sheet = 2, skip = 15, col_names = TRUE, trim_ws = TRUE)
+
+# Subsetting origin to Syria
+destination_data_syr <- destination_data %>%
+  dplyr::filter(...3 == "Syrian Arab Republic")
+
+destination_data_syr$Total <- destination_data_syr$Total %>%
+  as.numeric()
+
+# Subsetting origin to Syria and also 2018. This will be used in the map.
+destination_data_syr_2019 <- destination_data_syr %>%
+  dplyr::filter(...1 == 2019)
+
+# I am not interested in the first 9 columns. Only keeping columns which have data about the destination countries
+destination_data_syr_2019 <- destination_data_syr_2019[c(10:241)]
+
+# Making the table vertical- gather
+destination_data_syr_2019 <- tidyr::gather(destination_data_syr_2019, key = "country", value = "value")
+
+destination_data_syr_2019$value <- destination_data_syr_2019$value %>%
+  as.numeric()
+```
+
+```{r}
+
+destination_data_syr %>%
+  ggplot() +
+  geom_point(aes(x = factor(...1), y = Total)) +
+  geom_line(aes(x = factor(...1), y = Total, group = 1)) +
+  ylab(NULL) + xlab(NULL) +
+  geom_segment(aes(x = 3, xend = 3, y = 0, yend = 834916), color = "blue", size = 0.2) +
+  geom_label(aes(x = 3, y = 200000, label = "2000:\n Bashar Assad\ncomes to power"), size = 2.5) +
+  geom_segment(aes(x = 3.8, xend = 3.8, y = 0, yend = 851000), color = "blue", size = 0.2) +
+  geom_label(aes(x = 3.8, y = 500000, label = "2004:\n US imposes\nsanctions"), size = 2.5) +
+  geom_segment(aes(x = 5.2, xend = 5.2, y = 0, yend = 1600000), color = "blue", size = 0.2) +
+  geom_label(aes(x = 5.2, y = 1000000, label = "2011:\n Arab Spring\nSyrian Civil War begins"), size = 2.5) +
+  geom_segment(aes(x = 5.5, xend = 5.5, y = 0, yend = 1300000), color = "blue", size = 0.2) +
+  geom_label(aes(x=5.5, y=500000, label="2012:\nUN declares state of\ncivil war in Syria"),size=2.5) +
+  geom_segment(aes(x = 6.8, xend = 6.8, y = 0, yend = 867848), color = "blue", size = 0.2) +
+  geom_label(aes(x=6.8, y=200000, label="2018:\nUS-led missile\nstrikes"),size=2.5)
+
+```
+
+
+```{r}
+# importing the country centroid data
+world <- rgdal::readOGR("Data/country_centroids_az8/country_centroids_az8.shp")
+
+# Merging data with shape file
+world_syr <- merge(world, destination_data_syr_2019, by.x = "sovereignt", by.y = "country", all.x = TRUE)
+
+content <- sprintf("<strong>%s</strong><br/>%g",
+                  world_syr@data$sovereignt,
+                  world_syr@data$value) %>% lapply(htmltools::HTML)
+
+leaflet::leaflet() %>%
+  setView(33.510414, 36.278336, zoom = 4) %>%
+  addTiles(options = providerTileOptions(minZoom = 3, maxZoom = 5)) %>%
+  addCircles(data = world_syr,
+             lat = world_syr@data$Latitude,
+             lng = world_syr@data$Longitude,
+             radius = world_syr@data$value,
+             fillColor = world_syr@data$value,
+             opacity = 0.8, fillOpacity = 0.7,
+             popup = content, label = content, labelOptions(
+                    style = list("font-weight" = "normal", padding = "3px 8px"),
+                    textsize = "15px",
+                    direction = "auto"))
+
+```
