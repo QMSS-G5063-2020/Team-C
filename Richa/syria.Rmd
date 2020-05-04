@@ -3,6 +3,8 @@ title: "syria"
 output: html_document
 ---
 
+### The Present
+
 After Syria gained its independence in 1946, political life in the country was highly unstable, owing in large measure to intense friction between the country’s social, religious, and political groups. In 1970 Syria came under the authoritarian rule of Pres. Hafiz al-Assad. After Assad’s death in 2000, his son Bashar al-Assad became president. Bashar al-Assad ultimately continued his father’s authoritarian style of governments to quash political dissent. Long-suppressed internal tensions led to the outbreak of the Syrian Civil War in 2011.
 
 ```{r}
@@ -177,3 +179,5 @@ cas_syr %>%
        caption = "source: Casualty Reports from the Violations Documentation Center in Syria.", parse = TRUE)
 
 ```
+
+### The Future

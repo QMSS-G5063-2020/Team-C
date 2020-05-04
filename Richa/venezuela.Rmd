@@ -1,4 +1,6 @@
 
+### The Present
+
 Venezuela is a country located at the northern end of South America. It occupies a roughly triangular area that is larger than the combined areas of France and Germany.
 
 The economy of Venezuela is a market-based mixed economy based largely on the petroleum and manufacturing sectors, and has been in a state of total economic collapse since the mid-2010s. This has aled to a mass-exodus of people from the country which has been facing an economic and political turmoil since a long time.
@@ -6,6 +8,8 @@ The economy of Venezuela is a market-based mixed economy based largely on the pe
 ```{r}
 library(wbstats)
 library(ggplot2)
+library(tidyverse)
+library(leaflet)
 ```
 
 ```{r}
@@ -17,32 +21,19 @@ gdp_data_ven$date <- as.numeric(gdp_data_ven$date)
 ```{r}
 gdp_data_ven %>%
   ggplot(aes(x = factor(date), y = value, group = 1)) + 
-  geom_line(group = 1) + ylab("GDP per capita growth") +xlab(NULL) +
-  geom_hline(yintercept = 0, color = "red")
+  geom_line(group = 1) + ylab("GDP per capita growth") +xlab(NULL) + ylab(NULL) +
+  geom_hline(yintercept = 0, color = "red") +
+  labs(
+    title = "GDP per capita growth",
+    subtitle = "2000 - 2014",
+    caption = "source: World Bank, Global Poverty Working Group."
+  )
+  
 ```
 
 The GDP per capita growth has been dipping since reaching its peak in 2004.
 
 Let us see what the migration trends of the country has been.
-```{r}
-# mig_ven <- wbstats::wb(country = "VEN",indicator = c("SM.POP.NETM"),  startdate = "2000", enddate = "2020", return_wide = TRUE)
-# mig_ven$date <- as.numeric(mig_ven$date)
-```
-
-```{r}
-# ggplot(mig_ven) +
-#   geom_line(aes(x = factor(date), y = SM.POP.NETM, group = 1)) +
-#   xlab(NULL) + ylab(NULL)
-```
-
-```{r}
-# tmap_mode("view")
-# tm_shape(World) +
-#     tm_polygons(c("HPI", "economy")) +
-#     tm_facets(sync = TRUE, ncol = 2)
-```
-
-
 
 ```{r, warning=FALSE, message=FALSE}
 # Importing migrant origin and destination numbers for venezuela
@@ -81,10 +72,10 @@ destination_data_ven %>%
   geom_label(aes(x = 1.1, y = 800000, label = "1992:\n Venezuela is\n3rd richest country"), size = 2.5) +
   geom_segment(aes(x = 2.9, xend = 2.9, y = 0, yend = 1000000), color = "blue", size = 0.2) +
   geom_label(aes(x = 2.9, y = 800000, label = "1999:\n Chavez begins\nfirst term"), size = 2.5) +
-  geom_segment(aes(x = 3.3, xend = 3.3, y = 0, yend = 1000000), color = "blue", size = 0.2) +
-  geom_label(aes(x = 3.3, y = 600000, label = "2002:\n Armed forces\nrebel"), size = 2.5) +
-  geom_segment(aes(x = 5.5, xend = 5.5, y = 0, yend = 1400000), color = "blue", size = 0.2) +
-  geom_label(aes(x=5.5, y=1300000, label="2013:\nPresident Chavez dies.\nMaduro elected"),size=2.5) +
+  geom_segment(aes(x = 3.3, xend = 3.3, y = 0, yend = 1010000), color = "blue", size = 0.2) +
+  geom_label(aes(x = 3.3, y = 500000, label = "2002:\n Armed forces\nrebel"), size = 2.5) +
+  geom_segment(aes(x = 5.5, xend = 5.5, y = 0, yend = 1385000), color = "blue", size = 0.2) +
+  geom_label(aes(x=5.5, y=500000, label="2013:\nPresident Chavez dies.\nMaduro elected"),size=2.5) +
   geom_segment(aes(x = 5.8, xend = 5.8, y = 0, yend = 1400000), color = "blue", size = 0.2) +
   geom_label(aes(x=6, y=1100000, label="2014:\nCentral Bank\n confirms recession"),size=2.5) +
   labs(
@@ -104,7 +95,7 @@ world <- rgdal::readOGR("Data/country_centroids_az8/country_centroids_az8.shp", 
 world_ven <- merge(world, destination_data_ven_2019, by.x = "sovereignt", by.y = "country", all.x = TRUE)
 
 world_ven_ven <- world_ven@data %>%
-  filter(sovereignt == "Venezuela")
+  dplyr::filter(sovereignt == "Venezuela")
 
 content <- sprintf("<strong>%s</strong><br/>%g",
                   world_ven$sovereignt,
@@ -139,6 +130,7 @@ pal <- colorNumeric("Blues", df_ven$group)
 
 leaflet::leaflet() %>%
   setView(-66.1818412311, 7.12422421273, zoom = 2) %>%
+  #addProviderTiles(providers$MapBox, options = providerTileOptions(minZoom = 2, maxZoom = 5)) %>%
   addTiles(options = providerTileOptions(minZoom = 2, maxZoom = 5)) %>%
   addCircles(data = world_ven,
              lat = world_ven$Latitude,
@@ -157,8 +149,10 @@ leaflet::leaflet() %>%
                color = pal(df_ven$group),
                opacity = 0.1,
                weight = 1,
-               fillOpacity = df_ven$group,
+               fillOpacity = 0.25,
                fillColor = pal(df_ven$group))
   
   
 ```
+
+### The Future
