@@ -6,7 +6,7 @@ output: html_document
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
 
 # Load packages.
-packages <- c("ggplot2", "tidyverse", "wbstats", "rgdal", "leaflet", "dplyr", "lubridate", "hrbrthemes", "viridis","countrycode")
+packages <- c("ggplot2", "tidyverse", "wbstats", "rgdal", "leaflet", "dplyr", "lubridate", "viridis","countrycode", "ggthemes")
 
 packages <- lapply(packages, FUN = function(x) {
   if(!require(x, character.only = TRUE)) {
@@ -18,7 +18,10 @@ packages <- lapply(packages, FUN = function(x) {
 # Removing scientific notation
 options(scipen = 999)
 
+theme_set(theme_clean())
+
 ```
+
 
 # Migration Case Study: Analysis of Top 3 Migration Outflows {.tabset .tabset-fade}
 
@@ -169,7 +172,10 @@ mig_pop %>%
   theme(axis.text.x = element_blank(),
         axis.ticks.x = element_blank()) +
   geom_text(data = top3, aes(x = country, y = mig_by_pop, label = country), color = "green", check_overlap = TRUE, vjust = 0, nudge_y = 0.01) +
-  geom_text(data = least4, aes(x = country, y = mig_by_pop, label = country), color = "red", check_overlap = TRUE, vjust = 0, nudge_y = -0.01)
+  geom_text(data = least4, aes(x = country, y = mig_by_pop, label = country), color = "red", check_overlap = TRUE, vjust = 0, nudge_y = -0.01) +
+  labs(
+    title = "Migrants per capita (2017)",
+    caption = "source: World Bank, Global Poverty Working Group.")
   
 ```
 
