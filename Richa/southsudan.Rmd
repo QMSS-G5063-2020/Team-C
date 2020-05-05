@@ -163,6 +163,7 @@ leaflet::leaflet() %>%
 ```
 
 
+
 Word-Cloud for Article Coverages: South Sudan
 
 ```{r, message=FALSE, warning=FALSE, verbose=FALSE}
@@ -232,4 +233,28 @@ wordcloud(
   colors = brewer.pal(8, "Dark2")
 )
 ```
+
+
+
 ### The Future
+```{r, echo=FALSE}
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(ggthemes)
+library(plotly)
+library(DT)
+
+dfpop = read.csv("Data/WPP2019_TotalPopulationBySex.csv")
+```
+
+*Population development in South Sudan (Medium vs. zero-migration)*
+```{r}
+dfpop_sudan <- dfpop %>%
+  filter(Variant %in% c("Medium", "Zero migration")) %>%
+  filter(Location == "South Sudan")
+plot_popsudan <- ggplot(data=dfpop_sudan, aes(x=Time, y=PopTotal, fill=Variant, color=Variant)) + geom_line()
+plot_popsudan
+```
+This graph illustrates the total population (y-axis) development of South Sudan over time (x-axis). In the period from 1950 to 2019 the population is increasing almost constantly with the exception from around 1985 to 19959 as well as 2015 to 2019. South Sudan has a history of having issues with their census, which might be a reason for the two 'bumps' in the generally increasing curve. From 2020 to 2100 the graph includes two different curves. The red one is the medium projection variant, which the most popular type because it is based on the median of all trajectories based on a probabilistic model. The blue line describes the zero migration variant, which assumes that there is no international migration and projects the population based on that. Overall it seems like people tend to leave the country or at least there could be more people leaving the country than people coming in.  
+
