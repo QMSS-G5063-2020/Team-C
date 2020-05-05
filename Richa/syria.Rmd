@@ -270,4 +270,5 @@ dfpop_syria <- dfpop %>%
 plot_popsyria <- ggplot(data=dfpop_syria, aes(x=Time, y=PopTotal, fill=Variant, color=Variant)) + geom_line()
 plot_popsyria
 ```
+
 This graph illustrates the total population (y-axis) development of the Syrian Arab Republic over time (x-axis). In the period from 1950 to 2019 the population is increasing constantly with the exception from around 2015 to 2019. A possible reason for the development during that period is the Syrian war. From 2020 to 2100 the graph includes two different curves. The red one is the medium projection variant, which the most popular type because it is based on the median of all trajectories based on a probabilistic model. The blue line describes the zero migration variant, which assumes that there is no international migration and projects the population based on that. Interestingly, the population increases at a faster rate when there is migration. That is suprising for a country that experienced a decrease in the total population due to war. However, a possible explanation could be the return of Syrians who fled and registered as refugees in other countries. 
