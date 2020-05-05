@@ -188,6 +188,45 @@ We are removing Puerto Rico from our observations due to the fact that it is a p
 We are more interested in seeing the movement of people within countries and the reasons due to which this happens.
 
 
+```{r, echo=FALSE}
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(ggthemes)
+library(plotly)
+library(DT)
+
+dfpop = read.csv("Data/WPP2019_TotalPopulationBySex.csv")
+```
+
+*Births in number of births including both sexes combined in thousands (Medium)*
+```{r}
+plot_birthsmcountries <- ggplot(data=dfm_countries, aes(x=MidPeriod, y=Births, fill=Location, color=Location)) + geom_line()
+plot_birthsmcountries
+```
+This graph displays the total births including both sexes combined in thousands (y-axis) development of South Sudan, the Syrian Arab Republic, and the Bolivarian Republic of Venezuela over time, specifically from 2020 to 2100 (x-axis). It is based on the medium projection variant, which the most popular type because it is based on the median of all trajectories based on a probabilistic model. In general it is interesting to note that Venezuela has the highest birth numbers out of those three countries and this number increases further until around 2030. Afterwards, Venezuela's birth numbers decrease at the fastest rate and it is projected that it will have the lowest birth numbers from 2070 on. Syria seems to have an overall similiar trend with a delay of 20 years compared to Venezuela. However, South Sudan seems to be even further behind of those two countries, as it is projected that its birth numbers are going to increase constantly until 2070 before slowly decreasing.
+
+*Births in number of births including both sexes combined in thousands (Zero migration)*
+```{r}
+plot_birthszmcountries <- ggplot(data=dfzm_countries, aes(x=MidPeriod, y=Births, fill=Location, color=Location)) + geom_line()
+plot_birthszmcountries
+```
+This graph displays the total births including both sexes combined in thousands (y-axis) development of South Sudan, the Syrian Arab Republic, and the Bolivarian Republic of Venezuela over time, specifically from 2020 to 2100 (x-axis). It is based on the zero migration variant, which assumes that there is no international migration. The curves for South Sudan as well as Venezuela are similiar to the ones based on the medium variant. However, Syria's curve is drastically different as it is projected to have a decreasing amount of births from 2020 on. As mentioned within the Syria-tab a reason could be the return of people, who fled the country during the Syrian war, as Syria was the only country to have a larger population projection with migration than without.
+
+*Deaths in number of deaths including both sexes combined in thousands (Medium)*
+```{r}
+plot_deathsmcountries <- ggplot(data=dfm_countries, aes(x=MidPeriod, y=Deaths, fill=Location, color=Location)) + geom_line()
+plot_deathsmcountries
+```
+This graph decsribes the total deaths including both sexes combined in thousands (y-axis) development of South Sudan, the Syrian Arab Republic, and the Bolivarian Republic of Venezuela over time, specifically from 2020 to 2100 (x-axis). It is based on the medium projection variant, which the most popular type because it is based on the median of all trajectories based on a probabilistic model. In general Venezuela's curve is concaved and South Sudan's one convexed, which can probably be explained by the birth numbers from the previous graphs. South Sudan's birth numbers are projected to be increasing and eventually surpassing the Venezuela's numbers. Syria's death numbers are increasing until around 2075 before decreasing for around 15 years. Afterwards, the deaths numbers increase once again. The short increase from 2090 to 2100 probably corresponds to the birth numbers from around 2030 to 2050. 
+
+*Deaths in number of deaths including both sexes combined in thousands (Zero migration)*
+```{r}
+plot_deathszmcountries <- ggplot(data=dfzm_countries, aes(x=MidPeriod, y=Deaths, fill=Location, color=Location)) + geom_line()
+plot_deathszmcountries
+```
+This graph decsribes the total deaths including both sexes combined in thousands (y-axis) development of South Sudan, the Syrian Arab Republic, and the Bolivarian Republic of Venezuela over time, specifically from 2020 to 2100 (x-axis). It is based on the zero migration variant, which assumes that there is no international migration. The curves have similiar shapes as the ones based on the medium variant. Nonetheless, Syria's curve is increasing slower and surpasses South Sudan later and actually is lower again after around 2080.
+
 
 ## Venezuela {.tabset .tabset-fade .tabset-pills}
 
