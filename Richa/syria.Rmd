@@ -3,6 +3,8 @@ title: "syria"
 output: html_document
 ---
 
+### The Present
+
 After Syria gained its independence in 1946, political life in the country was highly unstable, owing in large measure to intense friction between the country’s social, religious, and political groups. In 1970 Syria came under the authoritarian rule of Pres. Hafiz al-Assad. After Assad’s death in 2000, his son Bashar al-Assad became president. Bashar al-Assad ultimately continued his father’s authoritarian style of governments to quash political dissent. Long-suppressed internal tensions led to the outbreak of the Syrian Civil War in 2011.
 
 ```{r}
@@ -10,7 +12,7 @@ library(wbstats)
 library(ggplot2)
 library(tidyverse)
 library(lubridate)
-library(hrbrthemes)
+library(ggthemes)
 library(viridis)
 ```
 
@@ -27,18 +29,8 @@ gdp_data_syr %>%
   geom_hline(yintercept = 0, color = "red") +
   labs(title = "GDP Growth Rate",
        subtitle = "Movement of GDP per capita growth rate from 2000-2007",
-       caption = "source: World Bank, Global Poverty Working Group.", parse = TRUE)
-```
-
-```{r}
-# mig_syr <- wbstats::wb(country = "SYR",indicator = c("SM.POP.NETM"),  startdate = "2000", enddate = "2020", return_wide = TRUE)
-# mig_syr$date <- as.numeric(mig_syr$date)
-```
-
-```{r}
-# ggplot(mig_syr) +
-#   geom_line(aes(x = factor(date), y = SM.POP.NETM, group = 1)) +
-#   xlab(NULL) + ylab(NULL)
+       caption = "source: World Bank, Global Poverty Working Group.", parse = TRUE) +
+  theme_minimal()
 ```
 
 
@@ -88,9 +80,13 @@ destination_data_syr %>%
 ```
 
 
+A very large number of migrants from Syria are refugees and asylum seekers who have moved to other countries to search for a safe haven.
+
+This map shows the destinations of the refugees and asylum seekers from Syria in the year 2019.
+
 ```{r}
 # importing the country centroid data
-world <- rgdal::readOGR("Data/country_centroids_az8/country_centroids_az8.shp")
+world <- rgdal::readOGR("Data/country_centroids_az8/country_centroids_az8.shp", verbose = FALSE)
 
 # Merging data with shape file
 world_syr <- merge(world, destination_data_syr_2019, by.x = "sovereignt", by.y = "country", all.x = TRUE)
@@ -175,7 +171,6 @@ cas_syr %>%
   ggplot(aes(x=factor(deathdate), y=count, size=count, fill=factor(count))) +
     geom_point(alpha=0.5, shape=21, color="black") +
     scale_fill_viridis(discrete=TRUE, guide=FALSE, option="A") +
-    theme_ipsum() +
     theme(legend.position="bottom") +
     ylab("Deaths") +
     xlab(NULL)+
@@ -184,3 +179,5 @@ cas_syr %>%
        caption = "source: Casualty Reports from the Violations Documentation Center in Syria.", parse = TRUE)
 
 ```
+
+### The Future

@@ -3,6 +3,9 @@ title: "southsudan"
 output: html_document
 ---
 
+
+### The Present
+
 Made up of the 10 southern-most states of Sudan, South Sudan is one of the most diverse countries in Africa. It is home to over 60 different major ethnic groups, and the majority of its people follow traditional religions.
 
 South Sudan gained independence from Sudan on 9 July 2011 as the outcome of a 2005 agreement that ended Africa's longest-running civil war. Independence did not bring conflict in South Sudan to an end. Civil war broke out in 2013 when the president fell out with his then vice president, leading to a conflict that has displaced some 4 million people.
@@ -26,10 +29,11 @@ pov_data_ssu$date <- pov_data_ssu$date %>%
   as.numeric()
 
 ggplot2::ggplot(pov_data_ssu) +
-  ggplot2::geom_bar(aes(x = factor(date), y = SI.POV.NAHC), stat = "identity") +
+  ggplot2::geom_bar(aes(x = factor(date), y = SI.POV.NAHC, fill = factor(SI.POV.NAHC)), stat = "identity") +
   xlab(NULL) + ylab(NULL) +
   labs(title = "%age of people living below poverty line",
-       caption = "source: World Bank, Global Poverty Working Group.", parse = TRUE)
+       caption = "source: World Bank, Global Poverty Working Group.", parse = TRUE) +
+  scale_fill_viridis(discrete=TRUE, guide=FALSE, option="A", direction = -1)
 
 ```
 
@@ -38,17 +42,6 @@ gdp_data_ssu <- wbstats::wb(country = "SSD",
                indicator = c("NY.GDP.PCAP.KD.ZG") , startdate = 2000, enddate = 2017)
 gdp_data_ssu$date <- as.numeric(gdp_data_ssu$date)
 ```
-
-```{r}
-gdp_data_ssu %>%
-  ggplot(aes(x = factor(date), y = value, group = 1)) + 
-  geom_line(group = 1) + ylab("GDP per capita growth") +xlab(NULL) + ylab(NULL) +
-  geom_hline(yintercept = 0, color = "red") +
-  labs(title = "GDP Growth Rate",
-       subtitle = "Movement of GDP per capita growth rate from 2009-2015",
-       caption = "source: World Bank, Global Poverty Working Group.", parse = TRUE)
-```
-
 
 ```{r, warning=FALSE, message=FALSE}
 # Importing migrant origin and destination numbers for South Sudan
@@ -78,31 +71,42 @@ destination_data_ssu_2019$value <- destination_data_ssu_2019$value %>%
 ```{r, warning=FALSE}
 
 destination_data_ssu %>%
+  # Removing rows without data
+  filter(...1 >= 2010) %>%
   ggplot() +
-  geom_point(aes(x = factor(...1), y = Total)) +
-  geom_line(aes(x = factor(...1), y = Total, group = 1)) +
-  ylab(NULL) + xlab(NULL)+
-  geom_label(aes(x = 4, y = 200000, label = "2005:\n North/South Comprehensive\nPeace Agreement signed"), size = 2.5) +
-  geom_segment(aes(x = 5.2, xend = 5.2, y = 0, yend = 400000), color = "blue", size = 0.2) +
-  geom_label(aes(x = 5.2, y = 200000, label = "2011:\n South Sudan\nis born"), size = 2.5) +
-  geom_segment(aes(x = 5.6, xend = 5.6, y = 0, yend = 600000), color = "blue", size = 0.2) +
-  geom_label(aes(x=5.6, y=450000, label="2013:\nCivil War\nerupts"),size=2.5) +
-  geom_segment(aes(x = 6.2, xend = 6.2, y = 0, yend = 857848), color = "blue", size = 0.2) +
-  geom_label(aes(x=6.2, y=300000, label="2016:\nUN claims ethnic\n cleansing in S. Sudan"),size=2.5)
+  geom_point(aes(x = factor(...1), y = Total, color = "red")) +
+  geom_line(aes(x = factor(...1), y = Total, group = 1, color = "red")) +
+  ylab(NULL) + xlab(NULL) +
+  geom_segment(aes(x = 1.2, xend = 1.2, y = 0, yend = 381000), color = "orange", size = 0.2) +
+  geom_label(aes(x = 1.2, y = 200000, label = "2011:\n South Sudan\nis born", fill = "yellow"), size = 2.5) +
+  geom_segment(aes(x = 1.6, xend = 1.6, y = 0, yend = 602000), color = "orange", size = 0.2) +
+  geom_label(aes(x=1.6, y=200000, label="2013:\nCivil War\nerupts", fill = "yellow"),size=2.5) +
+  geom_segment(aes(x = 2.2, xend = 2.2, y = 0, yend = 855000), color = "orange", size = 0.2) +
+  geom_label(aes(x=2.2, y=200000, label="2016:\nUN claims ethnic\n cleansing in S. Sudan", fill = "yellow"),size=2.5) +
+  labs(
+    title = "Evolution of migration",
+    subtitle = "2010 - 2019",
+    caption = "source: World Bank, Global Poverty Working Group."
+  ) +
+  theme(
+    legend.position = "none"
+  ) +
+  scale_color_viridis(discrete=TRUE, guide=FALSE, option="D", direction = 1)
 
 ```
 
+A very large number of migrants from South Sudan are refugees and asylum seekers who have moved to other countries to search for a safe haven.
 
-
+This map shows the destinations of the refugees and asylum seekers from South Sudan in the year 2019.
 ```{r}
 # importing the country centroid data
-world <- rgdal::readOGR("Data/country_centroids_az8/country_centroids_az8.shp")
+world <- rgdal::readOGR("Data/country_centroids_az8/country_centroids_az8.shp", verbose = FALSE)
 
 # Merging data with shape file
 world_ssu <- merge(world, destination_data_ssu_2019, by.x = "sovereignt", by.y = "country", all.x = TRUE)
 
 world_ssu_ssu <- world_ssu@data %>%
-  filter(sovereignt == "South Sudan")
+  dplyr::filter(sovereignt == "South Sudan")
 
 group <- c()
 lng <- c()
@@ -157,3 +161,5 @@ leaflet::leaflet() %>%
                weight = 1)
 
 ```
+
+### The Future
