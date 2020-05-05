@@ -89,7 +89,7 @@ A very large number of migrants from Venezuela are refugees and asylum seekers w
 
 This map shows the destinations of the refugees and asylum seekers from Venezuela in the year 2019.
 
-```{r, message=FALSE}
+```{r, message=FALSE, verbose=FALSE}
 world <- rgdal::readOGR("Data/country_centroids_az8/country_centroids_az8.shp", verbose = FALSE)
 
 world_ven <- merge(world, destination_data_ven_2019, by.x = "sovereignt", by.y = "country", all.x = TRUE)
@@ -154,5 +154,76 @@ leaflet::leaflet() %>%
   
   
 ```
+
+Word-Cloud for Article Coverages: Venezuela
+
+```{r, message=FALSE, warning=FALSE, verbose=FALSE}
+library(dplyr)
+library(stringi)
+library(tm)
+library(SnowballC)
+library(wordcloud)
+library(RColorBrewer)
+library(corpus)
+library(purrr)
+library(gower)
+library(lme4)
+library(multcomp)
+library(mvtnorm)
+library(corpustools)
+```
+
+```{r, message=FALSE, warning=FALSE, verbose=FALSE}
+text2 <- readLines("Data/venezuela_v1.txt")
+cloud2 <- Corpus(VectorSource(text2))
+```
+```{r, message=FALSE, warning=FALSE, verbose=FALSE}
+removeNumPunct <- function(x) {
+  gsub("[^[:alpha:][:space:]]*", "", x)
+}
+removeAllCaps <- function(x) {
+  gsub("\b[A-Z]+\b", "", x)
+}
+
+
+clean_corpus <- function(corpus) {
+  corpus <- tm_map(corpus, removePunctuation)
+  corpus <- tm_map(corpus, content_transformer(removeAllCaps))
+  corpus <- tm_map(corpus, content_transformer(tolower))
+  #adding too common and not insightful words to the stopwords list
+  corpus <- tm_map(corpus, removeWords, c("syria","syrian","south","sudan","venezuela","venezuelas","venezuelans","venezuelan","year","years","one","two","three","later","since","month","months","didnt","first","second","third","back","even","now","among","may","get","day","yet","say","country","countries","countrys","president","middle","many","still","says", "bus","left","like","want", "sudanese","sudans","refugee", stopwords("en")))
+  corpus <- tm_map(corpus, removeNumbers)
+  corpus <- tm_map(corpus, content_transformer(removeNumPunct))
+  corpus <- tm_map(corpus, stripWhitespace)
+  return(corpus)
+}
+```
+
+
+```{r, verbose=FALSE, warning=FALSE, message=FALSE}
+suc_clean2 <- clean_corpus(cloud2)
+
+suc_tdm2 <- TermDocumentMatrix(suc_clean2)
+
+suc_m2 <- as.matrix(suc_tdm2)
+
+suc_v2 <- sort(rowSums(suc_m2), decreasing = TRUE)
+
+suc_d2 <- data.frame(word = names(suc_v2), freq = suc_v2)
+```
+```{r, message=FALSE, warning=FALSE, verbose=FALSE}
+
+set.seed(1234)
+wordcloud(
+  words = suc_d2$word,
+  freq = suc_d2$freq,scale = c(2, 0.4),
+  min.freq = 5,
+  max.words = 100,
+  random.order = FALSE,
+  rot.per = 0.3,
+  colors = brewer.pal(8, "Dark2")
+)
+```
+
 
 ### The Future
