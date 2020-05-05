@@ -6,7 +6,7 @@ output: html_document
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
 
 # Load packages.
-packages <- c("ggplot2", "tidyverse", "wbstats", "rgdal", "leaflet", "dplyr", "lubridate", "viridis","countrycode", "ggthemes")
+packages <- c("ggplot2", "tidyverse", "wbstats", "rgdal", "leaflet", "dplyr", "lubridate", "viridis","countrycode","ggthemes","stringi","tm","SnowballC","wordcloud","RColorBrewer","corpus","unikn", "purrr","gower","lme4","multcomp","mvtnorm","corpustools","reshape2")
 
 packages <- lapply(packages, FUN = function(x) {
   if(!require(x, character.only = TRUE)) {
@@ -156,13 +156,13 @@ top3 <-  mig_pop %>%
   filter(date == 2017 & !is.na(mig_by_pop)) %>%
   arrange(desc(mig_by_pop)) %>%
   head(n = 3) %>%
-  select(country, mig_by_pop)
+  dplyr::select(country, mig_by_pop)
 
 least4 <- mig_pop %>%
   filter(date == 2017 & !is.na(mig_by_pop)) %>%
   arrange(desc(mig_by_pop)) %>%
   tail(n = 4) %>%
-  select(country, mig_by_pop)
+  dplyr::select(country, mig_by_pop)
 
 mig_pop %>%
   filter(date == 2017) %>%
@@ -188,6 +188,175 @@ We are removing Puerto Rico from our observations due to the fact that it is a p
 We are more interested in seeing the movement of people within countries and the reasons due to which this happens.
 
 
+### Word Cloud and Common Themes in News Coverages
+As part of our analysis, we also looked at the most frequent common words that appeared in the article coverages that mentioned migration related terms for each of the top 3 countries of interest. In doing so, we utilized Web article coverages from Factiva database for 2019. The year was chosen to focus on the discussion surrounding the issues of immigrants prior to the COVID pandemic. The overall wordcloud from the corpus of articles is given below. It is followed by the top terms for each country from the set of common terms that existed in separate corpuses by country.
+
+
+
+
+```{r, messages=FALSE, warning=FALSE}
+#Input the text files
+text <- readLines("Data/all_nations.txt")
+text1 <- readLines("Data/syria_v1.txt")
+text2 <- readLines("Data/venezuela_v1.txt")
+text3 <- readLines("Data/ssudan_v1.txt")
+```
+
+```{r}
+cloud <- Corpus(VectorSource(text))
+cloud1 <- Corpus(VectorSource(text1))
+cloud2 <- Corpus(VectorSource(text2))
+cloud3 <- Corpus(VectorSource(text3))
+```
+
+
+```{r, warning=FALSE, message=FALSE}
+removeNumPunct <- function(x) {
+  gsub("[^[:alpha:][:space:]]*", "", x)
+}
+removeAllCaps <- function(x) {
+  gsub("\b[A-Z]+\b", "", x)
+}
+
+
+clean_corpus <- function(corpus) {
+  corpus <- tm_map(corpus, removePunctuation)
+  corpus <- tm_map(corpus, content_transformer(removeAllCaps))
+  corpus <- tm_map(corpus, content_transformer(tolower))
+  #adding too common and not insightful words to the stopwords list
+  corpus <- tm_map(corpus, removeWords, c("syria","syrian","south","sudan","venezuela","venezuelas","venezuelans","venezuelan","year","years","one","two","three","later","since","month","months","didnt","first","second","third","back","even","now","among","may","get","day","yet","say","country","countries","countrys","president","middle","many","still","says", "bus","left","like","want", "sudanese","sudans","refugee", stopwords("en")))
+  corpus <- tm_map(corpus, removeNumbers)
+  corpus <- tm_map(corpus, content_transformer(removeNumPunct))
+  corpus <- tm_map(corpus, stripWhitespace)
+  return(corpus)
+}
+
+suc_clean <- clean_corpus(cloud)
+suc_tdm <- TermDocumentMatrix(suc_clean)
+suc_m <- as.matrix(suc_tdm)
+suc_v <- sort(rowSums(suc_m), decreasing = TRUE)
+suc_d <- data.frame(word = names(suc_v), freq = suc_v)
+```
+
+```{r, message=FALSE, warning=FALSE}
+set.seed(1234)
+wordcloud(
+  words = suc_d$word,
+  freq = suc_d$freq,scale = c(2, 0.4),
+  min.freq = 5,
+  max.words = 100,
+  random.order = FALSE,
+  rot.per = 0.3,
+  colors = brewer.pal(8, "Dark2")
+)
+```
+```{r}
+suc_clean1 <- clean_corpus(cloud1)
+
+suc_tdm1 <- TermDocumentMatrix(suc_clean1)
+
+suc_m1 <- as.matrix(suc_tdm1)
+
+suc_v1 <- sort(rowSums(suc_m1), decreasing = TRUE)
+
+suc_d1 <- data.frame(word = names(suc_v1), freq = suc_v1)
+```
+```{r}
+suc_clean2 <- clean_corpus(cloud2)
+
+suc_tdm2 <- TermDocumentMatrix(suc_clean2)
+
+suc_m2 <- as.matrix(suc_tdm2)
+
+suc_v2 <- sort(rowSums(suc_m2), decreasing = TRUE)
+
+suc_d2 <- data.frame(word = names(suc_v2), freq = suc_v2)
+```
+```{r}
+suc_clean3 <- clean_corpus(cloud3)
+
+suc_tdm3 <- TermDocumentMatrix(suc_clean3)
+
+suc_m3 <- as.matrix(suc_tdm3)
+
+suc_v3 <- sort(rowSums(suc_m3), decreasing = TRUE)
+
+suc_d3 <- data.frame(word = names(suc_v3), freq = suc_v3)
+```
+```{r}
+d1_syria <- suc_d1 
+names(d1_syria)[names(d1_syria) == "freq"] <- "freq_syria"
+d2_venezuela <- suc_d2 
+names(d2_venezuela)[names(d2_venezuela) == "freq"] <- "freq_venezuela"
+d3_ssudan <- suc_d3 
+names(d3_ssudan)[names(d3_ssudan) == "freq"] <- "freq_ssudan"
+```
+
+
+```{r, warning=FALSE, message=FALSE}
+#Cleaning up and prepping the dataframe for visualization
+#top common words by frequency are in combined3 
+Combined2 <- inner_join(d2_venezuela, d3_ssudan, by = "word") 
+Combined3<-inner_join(d1_syria, Combined2, by = "word")
+```
+
+```{r, warning=FALSE, message=FALSE}
+Combined5<- Combined3 %>% 
+top_n(5, freq_syria) %>%
+  arrange(desc(freq_syria))
+```
+```{r, warning=FALSE, message=FALSE}
+Combined6<- Combined3 %>% 
+top_n(5, freq_venezuela) %>%
+  arrange(desc(freq_venezuela))
+```
+```{r, warning=FALSE, message=FALSE}
+Combined7<- Combined3 %>% 
+top_n(5, freq_ssudan) %>%
+  arrange(desc(freq_ssudan))
+```
+
+
+```{r}
+#append these multiple dataframes into combined 4
+Combined4 <- rbind(Combined5,Combined6, Combined7)
+```
+
+```{r, warning=FALSE, message=FALSE}
+names(Combined4)[names(Combined4) == "freq_ssudan"] <- "South Sudan"
+names(Combined4)[names(Combined4) == "freq_syria"] <- "Syria"
+names(Combined4)[names(Combined4) == "freq_venezuela"] <- "Venezuela"
+```
+
+```{r, verbose=FALSE}
+test1<- reshape2::melt(Combined4, id.vars="word")
+names(test1)[names(test1) == "value"] <- "count"
+names(test1)[names(test1) == "variable"] <- "Country"
+```
+
+```{r}
+emotion_dtm <- test1
+emotiona_dtm<-emotion_dtm %>%
+  group_by(word, Country) 
+```
+```{r}
+emotion_dtm %>% ggplot(aes(x = word, y = count)) +
+  geom_col(aes(fill = Country)) +
+  facet_wrap(~ Country) +
+  coord_flip()+ theme_clean()+
+#theme(panel.background = element_rect(fill = "white",
+                                        #colour = "black",
+                                        #size = 0.5, 
+                                        #linetype = "solid"),
+        #panel.grid.major.y = element_blank(),
+        #panel.grid.major.x = element_line(size = .1, 
+                                         # color = "black",
+                                          #linetype = "dashed")) 
+scale_fill_manual(values = usecol(pal_unikn_pair, n = 3, alpha = 0.8)) +
+  labs(x = "Common Words",
+       y = "Frequency",
+       title = "Frequent Common Words by Country")
+```
 
 ## Venezuela {.tabset .tabset-fade .tabset-pills}
 
