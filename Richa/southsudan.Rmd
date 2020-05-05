@@ -162,6 +162,80 @@ leaflet::leaflet() %>%
 
 ```
 
+
+
+Word-Cloud for Article Coverages: South Sudan
+
+```{r, message=FALSE, warning=FALSE, verbose=FALSE}
+library(ggplot2)
+library(dplyr)
+library(stringi)
+library(tm)
+library(SnowballC)
+library(wordcloud)
+library(RColorBrewer)
+library(corpus)
+library(purrr)
+library(gower)
+library(lme4)
+library(multcomp)
+library(mvtnorm)
+library(corpustools)
+```
+
+```{r, message=FALSE, warning=FALSE, verbose=FALSE}
+text3 <- readLines("Data/ssudan_v1.txt")
+cloud3 <- Corpus(VectorSource(text3))
+```
+
+```{r, message=FALSE, warning=FALSE, verbose=FALSE}
+removeNumPunct <- function(x) {
+  gsub("[^[:alpha:][:space:]]*", "", x)
+}
+removeAllCaps <- function(x) {
+  gsub("\b[A-Z]+\b", "", x)
+}
+
+
+clean_corpus <- function(corpus) {
+  corpus <- tm_map(corpus, removePunctuation)
+  corpus <- tm_map(corpus, content_transformer(removeAllCaps))
+  corpus <- tm_map(corpus, content_transformer(tolower))
+  #adding too common and not insightful words to the stopwords list
+  corpus <- tm_map(corpus, removeWords, c("syria","syrian","south","sudan","venezuela","venezuelas","venezuelans","venezuelan","year","years","one","two","three","later","since","month","months","didnt","first","second","third","back","even","now","among","may","get","day","yet","say","country","countries","countrys","president","middle","many","still","says", "bus","left","like","want", "sudanese","sudans","refugee", stopwords("en")))
+  corpus <- tm_map(corpus, removeNumbers)
+  corpus <- tm_map(corpus, content_transformer(removeNumPunct))
+  corpus <- tm_map(corpus, stripWhitespace)
+  return(corpus)
+}
+```
+
+```{r, message=FALSE, warning=FALSE, verbose=FALSE}
+suc_clean3 <- clean_corpus(cloud3)
+
+suc_tdm3 <- TermDocumentMatrix(suc_clean3)
+
+suc_m3 <- as.matrix(suc_tdm3)
+
+suc_v3 <- sort(rowSums(suc_m3), decreasing = TRUE)
+
+suc_d3 <- data.frame(word = names(suc_v3), freq = suc_v3)
+```
+```{r, message=FALSE, warning=FALSE, verbose=FALSE}
+set.seed(1234)
+wordcloud(
+  words = suc_d3$word,
+  freq = suc_d3$freq,scale = c(2, 0.4),
+  min.freq = 5,
+  max.words = 100,
+  random.order = FALSE,
+  rot.per = 0.3,
+  colors = brewer.pal(8, "Dark2")
+)
+```
+
+
+
 ### The Future
 ```{r, echo=FALSE}
 library(tidyverse)
@@ -183,3 +257,4 @@ plot_popsudan <- ggplot(data=dfpop_sudan, aes(x=Time, y=PopTotal, fill=Variant, 
 plot_popsudan
 ```
 This graph illustrates the total population (y-axis) development of South Sudan over time (x-axis). In the period from 1950 to 2019 the population is increasing almost constantly with the exception from around 1985 to 19959 as well as 2015 to 2019. South Sudan has a history of having issues with their census, which might be a reason for the two 'bumps' in the generally increasing curve. From 2020 to 2100 the graph includes two different curves. The red one is the medium projection variant, which the most popular type because it is based on the median of all trajectories based on a probabilistic model. The blue line describes the zero migration variant, which assumes that there is no international migration and projects the population based on that. Overall it seems like people tend to leave the country or at least there could be more people leaving the country than people coming in.  
+
