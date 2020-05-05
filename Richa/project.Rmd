@@ -23,7 +23,8 @@ theme_set(theme_clean())
 ```
 
 
-# Migration Case Study: Analysis of Top 3 Migration Outflows {.tabset .tabset-fade}
+# Migration Case Study: Analysis of Top 3 Countries by Migration Outflows {.tabset .tabset-fade}
+### Project by Andres Montes Lopez, Richa Gupta, Samikshya Siwakoti, Maximilian Rychwalski
 
 ## Introduction {.tabset .tabset-fade .tabset-pills}
 
