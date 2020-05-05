@@ -1,7 +1,7 @@
 # Team-C
 Story of Migrants
 
-(You can open the .html by going to folder Richa/project.html
+(https://qmss-g5063-2020.github.io/Team-C/Richa/project.html)
 
 Get to know more about migration. We wanted to research about countries which have heavy per capita migration. 
 
