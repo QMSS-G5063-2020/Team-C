@@ -102,10 +102,13 @@ This map shows the destinations of the refugees and asylum seekers from South Su
 # importing the country centroid data
 world <- rgdal::readOGR("Data/country_centroids_az8/country_centroids_az8.shp", verbose = FALSE)
 
-# Merging data with shape file
-world_ssu <- merge(world, destination_data_ssu_2019, by.x = "sovereignt", by.y = "country", all.x = TRUE)
+world_sub <- world@data %>%
+  dplyr::filter(world@data$type != "Dependency")
 
-world_ssu_ssu <- world_ssu@data %>%
+# Merging data with shape file
+world_ssu <- merge(world_sub, destination_data_ssu_2019, by.x = "sovereignt", by.y = "country", all.x = TRUE)
+
+world_ssu_ssu <- world_ssu %>%
   dplyr::filter(sovereignt == "South Sudan")
 
 group <- c()
@@ -139,26 +142,82 @@ content <- sprintf("<strong>%s</strong><br/>%g",
                   world_ssu$sovereignt,
                   world_ssu$value) %>% lapply(htmltools::HTML)
 
-leaflet::leaflet() %>%
-  setView(6.8770, 31.34165036, zoom = 4) %>%
-  addTiles(options = providerTileOptions(minZoom = 3, maxZoom = 5)) %>%
-  addCircles(data = world_ssu,
-             lat = world_ssu$Latitude,
-             lng = world_ssu$Longitude,
-             radius = world_ssu$value,
-             fillColor = world_ssu$value,
-             opacity = 0.8, fillOpacity = 0.7,
-             popup = content, label = content, labelOptions(
-                    style = list("font-weight" = "normal", padding = "3px 8px"),
-                    textsize = "15px",
-                    direction = "auto")) %>%
-  addPolylines(data = df,
-               lng = df$lng,
-               lat = df$lat,
-               group = df$group,
-               color = pal(df$group),
-               opacity = 0.3,
-               weight = 1)
+###### Flow graph
+destination_data_ssu <- destination_data_ssu[c(1, 10:241)]
+
+# Rename column
+destination_data_ssu <- rename(destination_data_ssu, c("year" = "...1"))
+flow_data <- destination_data_ssu %>%
+  pivot_longer(-year, names_to = "country", values_to = "count")
+
+world_sub1 <- world_sub %>%
+  dplyr::select(sovereignt, Latitude, Longitude)
+world_sub1 <- rename(world_sub1, c("lat1" = "Latitude", "lng1" = "Longitude"))
+
+flow_data <- merge(flow_data, world_sub1, by.x = "country", by.y = "sovereignt")
+flow_data$lat0 = world_ssu_ssu$Latitude
+flow_data$lng0 = world_ssu_ssu$Longitude
+flow_data$count <- as.numeric(flow_data$count)
+flow_data <- drop_na(flow_data)
+
+binpal <- colorBin("-RdYlBu", world_ssu$value, 6, pretty = FALSE)
+
+leaflet(flow_data) %>%
+  setView(lat = 7.308779, lng = 30.2479, zoom = 4) %>%
+  addTiles(options = providerTileOptions(minZoom = 2, maxZoom = 5)) %>%
+  addFlows(
+    flow_data$lng0, flow_data$lat0, flow_data$lng1, flow_data$lat1,
+    flow = flow_data$count,
+    time = flow_data$year,
+    color = "red",
+    opacity = 0.5,
+    dir = 1,
+    popup = popupArgs(labels = "# of Emigrants"),
+    initialTime = 2019,
+    minThickness = 0.2,
+    maxThickness = 10
+  ) %>%
+  addMinicharts(
+    lat = flow_data$lat1,
+    lng = flow_data$lng1,
+  chartdata = flow_data$count,
+  time = flow_data$year,
+  maxValues = NULL,
+  type = "polar-area",
+  fillColor = "blue",
+  colorPalette = ~binpal(flow_data$count),
+  width = 40,
+  height = 40,
+  opacity = 0.7,
+  showLabels = TRUE,
+  labelMinSize = 8,
+  labelMaxSize = 24,
+  transitionTime = 750,
+  popup = popupArgs(labels = "# of Emigrants"),
+  legendPosition = "topright",
+  initialTime = 2019
+)
+
+# leaflet::leaflet() %>%
+#   setView(6.8770, 31.34165036, zoom = 4) %>%
+#   addTiles(options = providerTileOptions(minZoom = 3, maxZoom = 5)) %>%
+#   addCircles(data = world_ssu,
+#              lat = world_ssu$Latitude,
+#              lng = world_ssu$Longitude,
+#              radius = world_ssu$value,
+#              fillColor = world_ssu$value,
+#              opacity = 0.8, fillOpacity = 0.7,
+#              popup = content, label = content, labelOptions(
+#                     style = list("font-weight" = "normal", padding = "3px 8px"),
+#                     textsize = "15px",
+#                     direction = "auto")) %>%
+#   addPolylines(data = df,
+#                lng = df$lng,
+#                lat = df$lat,
+#                group = df$group,
+#                color = pal(df$group),
+#                opacity = 0.3,
+#                weight = 1)
 
 ```
 
