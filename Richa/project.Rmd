@@ -6,7 +6,7 @@ output: html_document
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
 
 # Load packages.
-packages <- c("ggplot2", "tidyverse", "wbstats", "rgdal", "leaflet", "dplyr", "lubridate", "viridis","countrycode","ggthemes","stringi","tm","SnowballC","wordcloud","RColorBrewer","corpus","unikn", "purrr","gower","lme4","multcomp","mvtnorm","corpustools","reshape2")
+packages <- c("ggplot2", "tidyverse", "wbstats", "rgdal", "leaflet", "dplyr", "lubridate", "viridis","countrycode","ggthemes","stringi","tm","SnowballC","wordcloud","RColorBrewer","corpus","unikn", "purrr","gower","lme4","multcomp","mvtnorm","corpustools","reshape2", "leaflet.minicharts")
 
 packages <- lapply(packages, FUN = function(x) {
   if(!require(x, character.only = TRUE)) {
@@ -30,7 +30,7 @@ theme_set(theme_clean())
 
 ### 2017 World Migration Flows
 
-```{r, message=FALSE, }
+```{r, message=FALSE }
 myspdf = readOGR(dsn= "data",layer="TM_WORLD_BORDERS_SIMPL-0.3", verbose = FALSE)
 df <- wb(country = "countries_only",indicator = c("SM.POP.NETM","SP.POP.TOTL"),  
          startdate = 2017, enddate = 2017)

@@ -92,9 +92,12 @@ This map shows the destinations of the refugees and asylum seekers from Venezuel
 ```{r, message=FALSE, verbose=FALSE}
 world <- rgdal::readOGR("Data/country_centroids_az8/country_centroids_az8.shp", verbose = FALSE)
 
-world_ven <- merge(world, destination_data_ven_2019, by.x = "sovereignt", by.y = "country", all.x = TRUE)
+world_sub <- world@data %>%
+  dplyr::filter(world@data$type != "Dependency")
 
-world_ven_ven <- world_ven@data %>%
+world_ven <- merge(world_sub, destination_data_ven_2019, by.x = "sovereignt", by.y = "country", all.x = TRUE)
+
+world_ven_ven <- world_ven %>%
   dplyr::filter(sovereignt == "Venezuela")
 
 content <- sprintf("<strong>%s</strong><br/>%g",
@@ -126,32 +129,64 @@ for(i in 1:nrow(world_ven)){
 
 df_ven <- data.frame(group=group, lng=lng, lat=lat)
 
-pal <- colorNumeric("Blues", df_ven$group)
+###### Flow graph
+destination_data_ven <- destination_data_ven[c(1, 10:241)]
 
-leaflet::leaflet() %>%
-  setView(-66.1818412311, 7.12422421273, zoom = 2) %>%
-  #addProviderTiles(providers$MapBox, options = providerTileOptions(minZoom = 2, maxZoom = 5)) %>%
+# Rename column
+destination_data_ven <- rename(destination_data_ven, c("year" = "...1"))
+flow_data <- destination_data_ven %>%
+  pivot_longer(-year, names_to = "country", values_to = "count")
+
+world_sub1 <- world_sub %>%
+  dplyr::select(sovereignt, Latitude, Longitude)
+world_sub1 <- rename(world_sub1, c("lat1" = "Latitude", "lng1" = "Longitude"))
+
+flow_data <- merge(flow_data, world_sub1, by.x = "country", by.y = "sovereignt")
+
+flow_data <- drop_na(flow_data)
+flow_data$lat0 = world_ven_ven$Latitude
+flow_data$lng0 = world_ven_ven$Longitude
+flow_data$count <- as.numeric(flow_data$count)
+
+
+binpal <- colorBin("-RdYlBu", world_ven$value, 6, pretty = FALSE)
+
+leaflet(flow_data) %>%
+  setView(-66.1818412311, 7.12422421273, zoom = 3) %>%
   addTiles(options = providerTileOptions(minZoom = 2, maxZoom = 5)) %>%
-  addCircles(data = world_ven,
-             lat = world_ven$Latitude,
-             lng = world_ven$Longitude,
-             radius = world_ven$value,
-             fillColor = world_ven$value,
-             opacity = 0.8, fillOpacity = 0.7,
-             popup = content, label = content, labelOptions(
-                    style = list("font-weight" = "normal", padding = "3px 8px"),
-                    textsize = "15px",
-                    direction = "auto")) %>%
-  addPolylines(data = df_ven,
-               lng = df_ven$lng,
-               lat = df_ven$lat,
-               group = df_ven$group,
-               color = pal(df_ven$group),
-               opacity = 0.1,
-               weight = 1,
-               fillOpacity = 0.25,
-               fillColor = pal(df_ven$group))
-  
+  addFlows(
+    flow_data$lng0, flow_data$lat0, flow_data$lng1, flow_data$lat1,
+    flow = flow_data$count,
+    time = flow_data$year,
+    color = "red",
+    opacity = 0.5,
+    dir = 1,
+    popup = popupArgs(labels = "# of Emigrants"),
+    initialTime = 2019,
+    minThickness = 0.2,
+    maxThickness = 10
+  ) %>%
+  addMinicharts(
+    lat = flow_data$lat1,
+    lng = flow_data$lng1,
+  chartdata = flow_data$count,
+  time = flow_data$year,
+  maxValues = NULL,
+  type = "auto",
+  fillColor = "blue",
+  colorPalette = ~binpal(flow_data$count),
+  width = 40,
+  height = 40,
+  opacity = 0.7,
+  showLabels = TRUE,
+  labelMinSize = 8,
+  labelMaxSize = 24,
+  transitionTime = 750,
+  popup = popupArgs(labels = "# of Emigrants"),
+  legendPosition = "topright",
+  initialTime = 2019
+)
+
   
 ```
 
