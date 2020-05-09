@@ -30,6 +30,11 @@ theme_set(theme_clean())
 
 ### 2017 World Migration Flows
 
+The map shows the inflows (green) and outflows (red) migration patterns in 2017. The map shows an interesting pattern of the global south on average per country experiencing larger outflows than the global north. Focusing on the outflows, we see that venezuela and the Syrian Arab Republic having the highest rates at -125.2 and -111.1 persons per 1000 people respectively. Also, the other country that had the highest country but was not illustrated was south sudan which at the time of this data set was still part of Sudan.
+
+In the next couple of sections we look closer at what migration patterns look like in these countries alongside sentiment of the media in towards these migrant outflows. 
+
+
 ```{r, message=FALSE }
 myspdf = readOGR(dsn= "data",layer="TM_WORLD_BORDERS_SIMPL-0.3", verbose = FALSE)
 df <- wb(country = "countries_only",indicator = c("SM.POP.NETM","SP.POP.TOTL"),  
@@ -82,7 +87,7 @@ combined_outflow <- filter(combined,combined$Type=="Outflow")
 qpal_outflow <- colorBin("Reds",combined_outflow$`Per 1,000 Rate`, bins=4,reverse = TRUE)
 
 combined_inflow <- filter(combined,combined$Type=="Inflow")
-qpal_inflow <- colorBin("Blues",combined_inflow$`Per 1,000 Rate`,bins = c(2,4,8,16,32,160))
+qpal_inflow <- colorBin("Greens",combined_inflow$`Per 1,000 Rate`,bins = c(2,4,8,16,32,160))
 
 #popup content
 content <- paste("<strong>Country:</strong>",myspdf$NAME,"<br/>",
@@ -93,7 +98,7 @@ content <- paste("<strong>Country:</strong>",myspdf$NAME,"<br/>",
 
 ```{r, warning=FALSE,message=FALSE, fig.align="center"}
 leaflet(myspdf,options = leafletOptions(zoomControl = TRUE, minZoom = 0, maxZoom = 4)) %>%
-  addProviderTiles(providers$MapBox) %>%
+  addProviderTiles(providers$CartoDB.PositronNoLabels) %>%
   fitBounds(~-100,-50,~80,80) %>%
   setView(lat = 10, lng=0, zoom = 1) %>%
  #add fill for default
@@ -428,4 +433,6 @@ scale_fill_manual(values = usecol(pal_unikn_pair, n = 3, alpha = 0.8)) +
 ```
 
 
+## Datasets
 
+The World Bank Open Data set includes world development indicators that cover a wide range of metrics across the world. Using the `wb` package, we chose the migration (`SM.POP.NETM`) and population (`SP.POP.TOTL`) indicators to measure the flows of people in all areas were the data was available. The rate was computed using the typical convention of a person per 1000 people. This allows for ease of interpretation and comparability across countries. For example, a 4 rate would be interpreted as a 4 persons coming into the country per 1000 people of the current year's population. In a similar fasion, a -4 rate would be interpreted as 4 persons leaving the country per 1000 people.
