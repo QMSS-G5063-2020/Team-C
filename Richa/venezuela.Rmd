@@ -214,6 +214,7 @@ suc_v2 <- sort(rowSums(suc_m2), decreasing = TRUE)
 
 suc_d2 <- data.frame(word = names(suc_v2), freq = suc_v2)
 ```
+
 ```{r, message=FALSE, warning=FALSE, verbose=FALSE}
 
 set.seed(1234)

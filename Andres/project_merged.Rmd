@@ -75,7 +75,7 @@ combined_outflow <- filter(combined,combined$Type=="Outflow")
 qpal_outflow <- colorBin("Reds",combined_outflow$`Per 1,000 Rate`, bins=4,reverse = TRUE)
 
 combined_inflow <- filter(combined,combined$Type=="Inflow")
-qpal_inflow <- colorBin("Blues",combined_inflow$`Per 1,000 Rate`,bins = c(2,4,8,16,32,160))
+qpal_inflow <- colorBin("Greens",combined_inflow$`Per 1,000 Rate`,bins = c(2,4,8,16,32,160))
 
 #popup content
 content <- paste("<strong>Country:</strong>",myspdf$NAME,"<br/>",
@@ -86,7 +86,7 @@ content <- paste("<strong>Country:</strong>",myspdf$NAME,"<br/>",
 
 ```{r, warning=FALSE,message=FALSE, fig.align="center"}
 leaflet(myspdf,options = leafletOptions(zoomControl = TRUE, minZoom = 0, maxZoom = 4)) %>%
-  addProviderTiles(providers$MapBox) %>%
+  addProviderTiles(providers$CartoDB.PositronNoLabels) %>%
   fitBounds(~-100,-50,~80,80) %>%
   setView(lat = 10, lng=0, zoom = 1) %>%
  #add fill for default
@@ -113,80 +113,8 @@ leaflet(myspdf,options = leafletOptions(zoomControl = TRUE, minZoom = 0, maxZoom
                    options = layersControlOptions(collapsed = FALSE))
 ```
 
-### The world
+The World Bank Open Data set includes world development indicators that cover a wide range of metrics across the world. Using the `wb` package, we chose the migration (`SM.POP.NETM`) and population (`SP.POP.TOTL`) indicators to measure the flows of people in all areas were the data was available. The rate was computed using the typical convention of a person per 1000 people. This allows for ease of interpretation and comparability across countries. For example, a 4 rate would be interpreted as a 4 persons coming into the country per 1000 people of the current year's population. In a similar fasion, a -4 rate would be interpreted as 4 persons leaving the country per 1000 people.
 
-```{r}
-# SM.POP.NETM - World bank indicator for Net migration- total number of migrants
-# SP.POP.TOTL - World bank indicator for Total population- total population
-mig_pop <- wbstats::wb(country = "countries_only",indicator = c("SM.POP.NETM", "SP.POP.TOTL"),  startdate = "2007", enddate = "2020", return_wide = TRUE)
+The map shows the inflows (green) and outflows (red) migration patterns in 2017. The map shows an interesting pattern of the global south on average per country experiencing larger outflows than the global north. Focusing on the outflows, we see that venezuela and the Syrian Arab Republic having the highest rates at -125.2 and -111.1 persons per 1000 people respectively. Also, the other country that had the highest country but was not illustrated was south sudan which at the time of this data set was still part of Sudan.
 
-# Variable to calcualte migration per population
-mig_pop$mig_by_pop <- mig_pop$SM.POP.NETM / mig_pop$SP.POP.TOTL
-
-# Converting date to integer from string
-mig_pop$date <- mig_pop$date %>% as.numeric()
-
-# mig_pop %>%
-#   ggplot(aes(x = date, y = mig_by_pop, color = country)) +
-#   geom_point() +
-#   geom_line(data = mig_pop[!is.na(mig_pop$mig_by_pop),], aes(group = country)) +
-#   theme(legend.position = "none")
-
-```
-The most recent data in World Bank is available for the year 2017.
-
-```{r}
-# Extract top 3 and least 3 countries for labels
-top3 <-  mig_pop %>%
-  filter(date == 2017 & !is.na(mig_by_pop)) %>%
-  arrange(desc(mig_by_pop)) %>%
-  head(n = 3) %>%
-  select(country, mig_by_pop)
-
-least4 <- mig_pop %>%
-  filter(date == 2017 & !is.na(mig_by_pop)) %>%
-  arrange(desc(mig_by_pop)) %>%
-  tail(n = 4) %>%
-  select(country, mig_by_pop)
-
-mig_pop %>%
-  filter(date == 2017) %>%
-  ggplot() +
-  geom_bar(aes(y = mig_by_pop, x = country), stat = "identity", na.rm = TRUE) +
-  xlab(NULL) + ylab("migration per person in the country") +
-  theme(axis.text.x = element_blank(),
-        axis.ticks.x = element_blank()) +
-  geom_text(data = top3, aes(x = country, y = mig_by_pop, label = country), color = "green", check_overlap = TRUE, vjust = 0, nudge_y = 0.01) +
-  geom_text(data = least4, aes(x = country, y = mig_by_pop, label = country), color = "red", check_overlap = TRUE, vjust = 0, nudge_y = -0.01)
-  
-```
-
-This graph shows that some countries stand out with higher than normal immigration like Bahrain, Maldives and Oman whereas some other countries are standing out because of all the people moving out of them. For example in Syria, for every 100 people in the country 12 people are moving to other countries.
-
-We are interested in understanding what are the reasons that are making these people move out of their home countries.
-
-We are removing Puerto Rico from our observations due to the fact that it is a part of United States and most of the migration that Puerto Rico faces is still inside of the country.
-
-We are more interested in seeing the movement of people within countries and the reasons due to which this happens.
-
-
-
-### Code
-
-## Venezuela {.tabset .tabset-fade .tabset-pills}
-
-```{r child='venezuela.Rmd'}
-```
-
-## South Sudan {.tabset .tabset-fade .tabset-pills}
-
-```{r child = 'southsudan.Rmd'}
-```
-
-## Syria {.tabset .tabset-fade .tabset-pills}
-
-```{r child = 'syria.Rmd'}
-```
-
-
-
+In the next couple of sections we look closer at what migration patterns look like in these countries alongside sentiment of the media in towards these migrant outflows. 
