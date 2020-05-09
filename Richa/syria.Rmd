@@ -29,8 +29,7 @@ gdp_data_syr %>%
   geom_hline(yintercept = 0, color = "red") +
   labs(title = "GDP Growth Rate",
        subtitle = "Movement of GDP per capita growth rate from 2000-2007",
-       caption = "source: World Bank, Global Poverty Working Group.", parse = TRUE) +
-  theme_minimal()
+       caption = "source: World Bank, Global Poverty Working Group.", parse = TRUE)
 ```
 
 
@@ -84,14 +83,33 @@ A very large number of migrants from Syria are refugees and asylum seekers who h
 
 This map shows the destinations of the refugees and asylum seekers from Syria in the year 2019.
 
+```{r, eval=FALSE}
+# world_syr %>%
+#   group_by(sovereignt) %>%
+#   summarise(count = n()) %>%
+#   arrange(desc(count))
+# 
+# world_syr %>%
+#   filter(sovereignt == "United Kingdom")
+# 
+# world_syr %>%
+#   filter(sovereignt == "Australia")
+# 
+# world_syr %>%
+#   filter(sovereignt == "France")
+```
+
 ```{r, verbose=FALSE}
 #importing the country centroid data
 world <- rgdal::readOGR("Data/country_centroids_az8/country_centroids_az8.shp")
 
-# Merging data with shape file
-world_syr <- merge(world, destination_data_syr_2019, by.x = "sovereignt", by.y = "country", all.x = TRUE)
+world_sub <- world@data %>%
+  dplyr::filter(world@data$type != "Dependency")
 
-world_syr_syr <- world_syr@data %>%
+# Merging data with shape file
+world_syr <- merge(world_sub, destination_data_syr_2019, by.x = "sovereignt", by.y = "country", all.x = TRUE)
+
+world_syr_syr <- world_syr %>%
   dplyr::filter(sovereignt == "Syria")
 
 group <- c()
@@ -125,29 +143,85 @@ content <- sprintf("<strong>%s</strong><br/>%g",
                   world_syr$sovereignt,
                   world_syr$value) %>% lapply(htmltools::HTML)
 
-leaflet::leaflet() %>%
-  setView(lng = 38.50788, lat = 35.02547, zoom = 2) %>%
-  addTiles(options = providerTileOptions(minZoom = 2, maxZoom = 5)) %>%
-  addCircles(data = world_syr,
-             lat = world_syr$Latitude,
-             lng = world_syr$Longitude,
-             radius = world_syr$value,
-             fillColor = world_syr$value,
-             opacity = 0.8, fillOpacity = 0.7,
-             popup = content, label = content, labelOptions(
-                    style = list("font-weight" = "normal", padding = "3px 8px"),
-                    textsize = "15px",
-                    direction = "auto")) %>%
-  addPolylines(data = df_syr,
-               lng = df_syr$lng,
-               lat = df_syr$lat,
-               group = df_syr$group,
-               color = pal(df_syr$group),
-               opacity = 0.1,
-               weight = 1,
-               fillOpacity = df_syr$group,
-               fillColor = pal(df_syr$group))
-  
+###### Flow graph
+destination_data_syr <- destination_data_syr[c(1, 10:241)]
+
+# Rename column
+destination_data_syr <- rename(destination_data_syr, c("year" = "...1"))
+flow_data <- destination_data_syr %>%
+  pivot_longer(-year, names_to = "country", values_to = "count")
+
+world_sub1 <- world_sub %>%
+  dplyr::select(sovereignt, Latitude, Longitude)
+world_sub1 <- rename(world_sub1, c("lat1" = "Latitude", "lng1" = "Longitude"))
+
+flow_data <- merge(flow_data, world_sub1, by.x = "country", by.y = "sovereignt")
+flow_data$lat0 = world_syr_syr$Latitude
+flow_data$lng0 = world_syr_syr$Longitude
+flow_data$count <- as.numeric(flow_data$count)
+flow_data <- drop_na(flow_data)
+
+binpal <- colorBin("-RdYlBu", world_syr$value, 6, pretty = FALSE)
+
+leaflet(flow_data) %>%
+  setView(lat = 35.02547	, lng = 38.50788, zoom = 5) %>%
+  addTiles(options = providerTileOptions(minZoom = 3, maxZoom = 6)) %>%
+  addFlows(
+    flow_data$lng0, flow_data$lat0, flow_data$lng1, flow_data$lat1,
+    flow = flow_data$count,
+    time = flow_data$year,
+    color = "red",
+    opacity = 0.5,
+    dir = 1,
+    popup = popupArgs(labels = "# of Emigrants"),
+    initialTime = 2019,
+    minThickness = 0.2,
+    maxThickness = 10
+  ) %>%
+  addMinicharts(
+    lat = flow_data$lat1,
+    lng = flow_data$lng1,
+  chartdata = flow_data$count,
+  time = flow_data$year,
+  maxValues = NULL,
+  type = "polar-area",
+  fillColor = "blue",
+  colorPalette = ~binpal(flow_data$count),
+  width = 40,
+  height = 40,
+  opacity = 0.7,
+  showLabels = TRUE,
+  labelMinSize = 6,
+  labelMaxSize = 24,
+  transitionTime = 750,
+  popup = popupArgs(labels = "# of Emigrants"),
+  legendPosition = "topright",
+  initialTime = 2019
+)
+
+# leaflet::leaflet() %>%
+#   setView(lng = 38.50788, lat = 35.02547, zoom = 2) %>%
+#   addTiles(options = providerTileOptions(minZoom = 2, maxZoom = 5)) %>%
+#   addCircles(data = world_syr,
+#              lat = world_syr$Latitude,
+#              lng = world_syr$Longitude,
+#              radius = world_syr$value,
+#              fillColor = world_syr$value,
+#              opacity = 0.8, fillOpacity = 0.7,
+#              popup = content, label = content, labelOptions(
+#                     style = list("font-weight" = "normal", padding = "3px 8px"),
+#                     textsize = "15px",
+#                     direction = "auto")) %>%
+#   addPolylines(data = df_syr,
+#                lng = df_syr$lng,
+#                lat = df_syr$lat,
+#                group = df_syr$group,
+#                color = pal(df_syr$group),
+#                opacity = 0.1,
+#                weight = 1,
+#                fillOpacity = df_syr$group,
+#                fillColor = pal(df_syr$group))
+#   
 
 ```
 
