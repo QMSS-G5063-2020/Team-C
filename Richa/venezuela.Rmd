@@ -19,19 +19,22 @@ gdp_data_ven$date <- as.numeric(gdp_data_ven$date)
 ```
 
 ```{r}
-gdp_data_ven %>%
-  ggplot(aes(x = factor(date), y = value, group = 1)) + 
+p <- gdp_data_ven %>%
+  mutate(year = factor(date)) %>%
+  ggplot(aes(x = year, y = value, group = 1)) + 
   geom_line(group = 1) + ylab("GDP per capita growth") +xlab(NULL) + ylab(NULL) +
-  geom_hline(yintercept = 0, color = "red") +
-  labs(
-    title = "GDP per capita growth",
-    subtitle = "2000 - 2014",
-    caption = "source: World Bank, Global Poverty Working Group."
-  )
-  
+  geom_hline(yintercept = 0, color = "red")
+
+ggplotly(p) %>%
+  plotly::layout(title = list(text = paste0('GDP per capita growth (2000-14)',
+                                    '<br>',
+                                    '<sup>',
+                                    'source: World Bank, Global Poverty Working Group.',
+                                    '</sup>')))
+
 ```
 
-The GDP per capita growth has been dipping since reaching its peak in 2004.
+The GDP per capita growth has been dipping since reaching its peak in 2004. The GDP steadily fell from 2012.
 
 Let us see what the migration trends of the country has been.
 
@@ -64,26 +67,35 @@ destination_data_ven_2019$value <- destination_data_ven_2019$value %>%
 options(scipen = 999)
 
 destination_data_ven %>%
+  mutate(year = factor(...1)) %>%
   ggplot() +
-  geom_point(aes(x = factor(...1), y = Total)) +
-  geom_line(aes(x = factor(...1), y = Total, group = 1)) +
+  geom_point(aes(x = year, y = Total, color = "red")) +
+  geom_line(aes(x = year, y = Total, group = 1, color = "red")) +
   ylab(NULL) + xlab(NULL) + 
-  geom_segment(aes(x = 1.1, xend = 1.1, y = 0, yend = 1000000), color = "blue", size = 0.2) +
-  geom_label(aes(x = 1.1, y = 800000, label = "1992:\n Venezuela is\n3rd richest country"), size = 2.5) +
-  geom_segment(aes(x = 2.9, xend = 2.9, y = 0, yend = 1000000), color = "blue", size = 0.2) +
-  geom_label(aes(x = 2.9, y = 800000, label = "1999:\n Chavez begins\nfirst term"), size = 2.5) +
-  geom_segment(aes(x = 3.3, xend = 3.3, y = 0, yend = 1010000), color = "blue", size = 0.2) +
-  geom_label(aes(x = 3.3, y = 500000, label = "2002:\n Armed forces\nrebel"), size = 2.5) +
-  geom_segment(aes(x = 5.5, xend = 5.5, y = 0, yend = 1385000), color = "blue", size = 0.2) +
-  geom_label(aes(x=5.5, y=500000, label="2013:\nPresident Chavez dies.\nMaduro elected"),size=2.5) +
-  geom_segment(aes(x = 5.8, xend = 5.8, y = 0, yend = 1400000), color = "blue", size = 0.2) +
-  geom_label(aes(x=6, y=1100000, label="2014:\nCentral Bank\n confirms recession"),size=2.5) +
+  geom_segment(aes(x = 1.1, xend = 1.1, y = 0, yend = 1000000), color = "orange", size = 0.2) +
+  geom_label(aes(x = 1.1, y = 800000, label = "1992:\n Venezuela is\n3rd richest country", fill = "yellow"), size = 2.5) +
+  geom_segment(aes(x = 2.9, xend = 2.9, y = 0, yend = 1000000), color = "orange", size = 0.2) +
+  geom_label(aes(x = 2.9, y = 800000, label = "1999:\n Chavez begins\nfirst term", fill = "yellow"), size = 2.5) +
+  geom_segment(aes(x = 3.3, xend = 3.3, y = 0, yend = 1010000), color = "orange", size = 0.2) +
+  geom_label(aes(x = 3.3, y = 500000, label = "2002:\n Armed forces\nrebel", fill = "yellow"), size = 2.5) +
+  geom_segment(aes(x = 5.5, xend = 5.5, y = 0, yend = 1385000), color = "orange", size = 0.2) +
+  geom_label(aes(x=5.5, y=500000, label="2013:\nPresident Chavez dies.\nMaduro elected", fill = "yellow"),size=2.5) +
+  geom_segment(aes(x = 5.8, xend = 5.8, y = 0, yend = 1400000), color = "orange", size = 0.2) +
+  geom_label(aes(x=6, y=1100000, label="2014:\nCentral Bank\n confirms recession", fill = "yellow"),size=2.5) +
   labs(
     title = "Evolution of migration",
     subtitle = "1990 - 2019",
     caption = "source: World Bank, Global Poverty Working Group."
-  )
+  ) +
+  theme(
+    legend.position = "none"
+  ) +
+  scale_color_viridis(discrete=TRUE, guide=FALSE, option="D", direction = 1)
+
+
 ```
+
+This graph shows how the numbers of migrants has steadily increased over time specially since the GDP growth rate started falling in 2012. Due to lack of current data on GDP it is difficult to correlate it with migration trends but it seems that GDP has not been able to recover back to its higher levels.
 
 A very large number of migrants from Venezuela are refugees and asylum seekers who have moved to other countries to search for a safe haven.
 
@@ -153,7 +165,7 @@ binpal <- colorBin("-RdYlBu", world_ven$value, 6, pretty = FALSE)
 
 leaflet(flow_data) %>%
   setView(-66.1818412311, 7.12422421273, zoom = 3) %>%
-  addTiles(options = providerTileOptions(minZoom = 2, maxZoom = 5)) %>%
+  addTiles('https://tiles.stadiamaps.com/tiles/osm_bright/{z}/{x}/{y}{r}.png', options = providerTileOptions(minZoom = 2, maxZoom = 5)) %>%
   addFlows(
     flow_data$lng0, flow_data$lat0, flow_data$lng1, flow_data$lat1,
     flow = flow_data$count,
@@ -190,7 +202,7 @@ leaflet(flow_data) %>%
   
 ```
 
-
+Given the large number of emigration from Venezuela, Venezuelans have pretty much moved to all the corners of the world. But even then a little less than 1 million Venezuelans emigrated to Colombia in the year 2019 alone. This number has been steadily above 900,000 since 2010. 
 
 
 Word-Cloud for Article Coverages: Venezuela

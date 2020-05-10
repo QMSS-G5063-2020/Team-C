@@ -14,6 +14,10 @@ library(tidyverse)
 library(lubridate)
 library(ggthemes)
 library(viridis)
+library(plotly)
+library(RColorBrewer)
+library(leaflet)
+library(leaflet.minicharts)
 ```
 
 ```{r}
@@ -23,13 +27,14 @@ gdp_data_syr$date <- as.numeric(gdp_data_syr$date)
 ```
 
 ```{r}
-gdp_data_syr %>%
-  ggplot(aes(x = factor(date), y = value, group = 1)) + 
+p <- gdp_data_syr %>%
+  mutate(year = factor(date)) %>%
+  ggplot(aes(x = year, y = value, group = 1)) + 
   geom_line(group = 1) + ylab("GDP per capita growth") +xlab(NULL) +
-  geom_hline(yintercept = 0, color = "red") +
-  labs(title = "GDP Growth Rate",
-       subtitle = "Movement of GDP per capita growth rate from 2000-2007",
-       caption = "source: World Bank, Global Poverty Working Group.", parse = TRUE)
+  geom_hline(yintercept = 0, color = "red")
+
+ggplotly(p) %>%
+  plotly::layout(title = list(text = paste0('GDP per capita growth (2000-7)')))
 ```
 
 
@@ -58,28 +63,41 @@ destination_data_syr_2019$value <- destination_data_syr_2019$value %>%
   as.numeric()
 ```
 
+A severe decline in the GDP growth rate in 2004 onwards led to a sharp increase in the number of migrants. 
+
 ```{r}
 
 destination_data_syr %>%
+  mutate(year = factor(...1)) %>%
   ggplot() +
-  geom_point(aes(x = factor(...1), y = Total)) +
-  geom_line(aes(x = factor(...1), y = Total, group = 1)) +
+  geom_point(aes(x = year, y = Total)) +
+  geom_line(aes(x = year, y = Total, group = 1)) +
   ylab(NULL) + xlab(NULL) +
-  geom_segment(aes(x = 3, xend = 3, y = 0, yend = 834916), color = "blue", size = 0.2) +
-  geom_label(aes(x = 3, y = 200000, label = "2000:\n Bashar Assad\ncomes to power"), size = 2.5) +
-  geom_segment(aes(x = 3.8, xend = 3.8, y = 0, yend = 851000), color = "blue", size = 0.2) +
-  geom_label(aes(x = 3.8, y = 500000, label = "2004:\n US imposes\nsanctions"), size = 2.5) +
-  geom_segment(aes(x = 5.2, xend = 5.2, y = 0, yend = 1600000), color = "blue", size = 0.2) +
-  geom_label(aes(x = 5.2, y = 1000000, label = "2011:\n Arab Spring\nSyrian Civil War begins"), size = 2.5) +
-  geom_segment(aes(x = 5.5, xend = 5.5, y = 0, yend = 1300000), color = "blue", size = 0.2) +
-  geom_label(aes(x=5.5, y=500000, label="2012:\nUN declares state of\ncivil war in Syria"),size=2.5) +
-  geom_segment(aes(x = 6.8, xend = 6.8, y = 0, yend = 867848), color = "blue", size = 0.2) +
-  geom_label(aes(x=6.8, y=200000, label="2018:\nUS-led missile\nstrikes"),size=2.5)
+  geom_segment(aes(x = 3, xend = 3, y = 0, yend = 834916), color = "orange", size = 0.2) +
+  geom_label(aes(x = 3, y = 200000, label = "2000:\n Bashar Assad\ncomes to power", fill = "yellow"), size = 2.5) +
+  geom_segment(aes(x = 3.8, xend = 3.8, y = 0, yend = 851000), color = "orange", size = 0.2) +
+  geom_label(aes(x = 3.8, y = 500000, label = "2004:\n US imposes\nsanctions", fill = "yellow"), size = 2.5) +
+  geom_segment(aes(x = 5.2, xend = 5.2, y = 0, yend = 1600000), color = "orange", size = 0.2) +
+  geom_label(aes(x = 5.2, y = 1000000, label = "2011:\n Arab Spring\nSyrian Civil War begins", fill = "yellow"), size = 2.5) +
+  geom_segment(aes(x = 5.5, xend = 5.5, y = 0, yend = 1300000), color = "orange", size = 0.2) +
+  geom_label(aes(x=5.5, y=500000, label="2012:\nUN declares state of\ncivil war in Syria", fill = "yellow"),size=2.5) +
+  geom_segment(aes(x = 6.8, xend = 6.8, y = 0, yend = 867848), color = "orange", size = 0.2) +
+  geom_label(aes(x=6.8, y=200000, label="2018:\nUS-led missile\nstrikes", fill = "yellow"),size=2.5) +
+  labs(
+    title = "Evolution of migration",
+    subtitle = "1990 - 2019",
+    caption = "source: World Bank, Global Poverty Working Group."
+  ) +
+  theme(
+    legend.position = "none"
+  ) +
+  scale_color_viridis(discrete=TRUE, guide=FALSE, option="D", direction = 1)
 
 ```
 
+After experiencing a mass exodus in 2010 when more than 1.5 million people emigrated from the country there has been some decline but the number of migrants still hovers close to less than a million. In the year 2010 almost 1.1 million people moved to neighbouring country Iraq.
 
-A very large number of migrants from Syria are refugees and asylum seekers who have moved to other countries to search for a safe haven.
+Similar to trend observed in South Sudan, Syrian migrants have not travelled to far off countries in the American and the European continents. They have limited themselves to the North-east African countries or western Asia.
 
 This map shows the destinations of the refugees and asylum seekers from Syria in the year 2019.
 
@@ -101,7 +119,7 @@ This map shows the destinations of the refugees and asylum seekers from Syria in
 
 ```{r, verbose=FALSE}
 #importing the country centroid data
-world <- rgdal::readOGR("Data/country_centroids_az8/country_centroids_az8.shp")
+world <- rgdal::readOGR("Data/country_centroids_az8/country_centroids_az8.shp", verbose = FALSE)
 
 world_sub <- world@data %>%
   dplyr::filter(world@data$type != "Dependency")
@@ -165,7 +183,7 @@ binpal <- colorBin("-RdYlBu", world_syr$value, 6, pretty = FALSE)
 
 leaflet(flow_data) %>%
   setView(lat = 35.02547	, lng = 38.50788, zoom = 5) %>%
-  addTiles(options = providerTileOptions(minZoom = 3, maxZoom = 6)) %>%
+  addTiles('https://tiles.stadiamaps.com/tiles/osm_bright/{z}/{x}/{y}{r}.png', options = providerTileOptions(minZoom = 3, maxZoom = 6)) %>%
   addFlows(
     flow_data$lng0, flow_data$lat0, flow_data$lng1, flow_data$lat1,
     flow = flow_data$count,
@@ -225,6 +243,8 @@ leaflet(flow_data) %>%
 
 ```
 
+The graph below represents the number of deaths that have taken place due to Syrian Civil War since 2011.
+
 ```{r}
 # Loading casuality data
 cas_syr <- read.csv("Data/VDC_Syria_CASREP.csv", stringsAsFactors = FALSE)
@@ -235,25 +255,37 @@ cas_syr$deathdate <- cas_syr$deathdate %>%
   lubridate::year()
 
 # Aggregating the data, Selecting only civilians
-cas_syr <- cas_syr %>%
+cas_syr1 <- cas_syr %>%
   filter(status == "Civilian") %>%
   group_by(deathdate) %>%
   summarise(count = n())
 
-cas_syr %>%
+p <- cas_syr1 %>%
   arrange(deathdate) %>%
-  ggplot(aes(x=factor(deathdate), y=count, size=count, fill=factor(count))) +
+  mutate(year = factor(deathdate)) %>%
+  ggplot(aes(x=year, y=count, size=count, fill=factor(count))) +
     geom_point(alpha=0.5, shape=21, color="black") +
     scale_fill_viridis(discrete=TRUE, guide=FALSE, option="A") +
-    theme(legend.position="bottom") +
+    theme(legend.position="none") +
     ylab("Deaths") +
-    xlab(NULL)+
-    theme(legend.position = "none") +
-    labs(title = "Civilian deaths due to the war (2011-2019)",
-       caption = "source: Casualty Reports from the Violations Documentation Center in Syria.", parse = TRUE)
+    xlab(NULL)
 
+ggplotly(p) %>%
+  plotly::layout(title = list(text = paste0('Civilian deaths due to the war (2011-2019)',
+                                    '<br>',
+                                    '<sup>',
+                                    'source: Casualty Reports from the Violations Documentation Center in Syria.',
+                                    '</sup>')))
 ```
-
+This table sheds more light on how many of the victims of this war have been children and civilian adults. 
+```{r}
+cas_syr %>%
+  dplyr::select(status, gender, deathdate) %>%
+  dplyr::group_by(deathdate, status, gender) %>%
+  dplyr::summarise(count = n()) %>%
+  dplyr::arrange(deathdate, gender) %>%
+  DT::datatable()
+```
 
 Word-Cloud for Article Coverages: Syria
 

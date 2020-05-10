@@ -21,21 +21,35 @@ library(leaflet)
 
 
 
-
 ```{r}
+gdp_data_ssu <- wb(country = "SSD",
+               indicator = c("NY.GDP.PCAP.KD.ZG") , startdate = 2009, enddate = 2020)
+gdp_data_ssu$date <- as.numeric(gdp_data_ssu$date)
+
 pov_data_ssu <- wbstats::wb(country = "SSD", 
                             indicator = "SI.POV.NAHC", startdate = 2009, enddate = 2020, return_wide = TRUE)
 pov_data_ssu$date <- pov_data_ssu$date %>%
   as.numeric()
 
-ggplot2::ggplot(pov_data_ssu) +
-  ggplot2::geom_bar(aes(x = factor(date), y = SI.POV.NAHC, fill = factor(SI.POV.NAHC)), stat = "identity") +
-  xlab(NULL) + ylab(NULL) +
-  labs(title = "%age of people living below poverty line",
-       caption = "source: World Bank, Global Poverty Working Group.", parse = TRUE) +
-  scale_fill_viridis(discrete=TRUE, guide=FALSE, option="A", direction = -1)
+p <- ggplot2::ggplot() +
+  ggplot2::geom_bar(data = pov_data_ssu %>%
+                      mutate(year = factor(date), `%age population under poverty` = SI.POV.NAHC),
+                    aes(x = year, y = `%age population under poverty`, fill = factor(`%age population under poverty`)), stat = "identity") +
+  ggplot2::geom_line(data = gdp_data_ssu %>%
+                       mutate(year = factor(date)), aes(x = year, y = value, group = 1, color = "GDP Growth Rate")) +
+  xlab(NULL) + ylab(NULL)  +
+  scale_fill_viridis(discrete=TRUE, guide=FALSE, option="A", direction = -1) + theme(legend.position = "none")
+
+ggplotly(p)%>%
+  plotly::layout(title = list(text = paste0('People living below poverty line & GDP per capita growth (2009-16)'                                  )))
+
+
+#+ ylab("GDP per capita growth")
+  
+
 
 ```
+There is a clear connection between decrease in GDP Growth rates and the increasing number of people living below the national poverty lines. Year 2016, more than 80% of the population of the country was living below the national poverty line. The international poverty line, which is currently \$1.90 a day, is the threshold that determines whether someone is living in poverty. The estimates in South Sudan are based on national poverty lines which will be at the most similar or lesser than the international poverty line at $1.90 a day.
 
 ```{r}
 gdp_data_ssu <- wbstats::wb(country = "SSD",
@@ -68,14 +82,17 @@ destination_data_ssu_2019$value <- destination_data_ssu_2019$value %>%
   as.numeric()
 ```
 
+
+Let us see what the migration trends in the country have been.
 ```{r, warning=FALSE}
 
 destination_data_ssu %>%
   # Removing rows without data
   filter(...1 >= 2010) %>%
+  mutate(year = factor(...1)) %>%
   ggplot() +
-  geom_point(aes(x = factor(...1), y = Total, color = "red")) +
-  geom_line(aes(x = factor(...1), y = Total, group = 1, color = "red")) +
+  geom_point(aes(x = year, y = Total, color = "red")) +
+  geom_line(aes(x = year, y = Total, group = 1, color = "red")) +
   ylab(NULL) + xlab(NULL) +
   geom_segment(aes(x = 1.2, xend = 1.2, y = 0, yend = 381000), color = "orange", size = 0.2) +
   geom_label(aes(x = 1.2, y = 200000, label = "2011:\n South Sudan\nis born", fill = "yellow"), size = 2.5) +
@@ -95,7 +112,9 @@ destination_data_ssu %>%
 
 ```
 
-A very large number of migrants from South Sudan are refugees and asylum seekers who have moved to other countries to search for a safe haven.
+The GDP growth rate declined rapidly in 2010 and the same period saw an almost exponential growth in the number of migrants leaving the country. Since 2010, the country has seen continous periods of civil unrest. The number of migrants seem to have plateaued after reaching just around 850,000 people per year.
+
+Now we can see where have the migrants landed after leaving their home country. A very large number of migrants from South Sudan are refugees and asylum seekers who have moved to other countries to search for a safe haven.
 
 This map shows the destinations of the refugees and asylum seekers from South Sudan in the year 2019.
 ```{r}
@@ -164,7 +183,7 @@ binpal <- colorBin("-RdYlBu", world_ssu$value, 6, pretty = FALSE)
 
 leaflet(flow_data) %>%
   setView(lat = 7.308779, lng = 30.2479, zoom = 4) %>%
-  addTiles(options = providerTileOptions(minZoom = 2, maxZoom = 5)) %>%
+  addTiles('https://tiles.stadiamaps.com/tiles/osm_bright/{z}/{x}/{y}{r}.png', options = providerTileOptions(minZoom = 2, maxZoom = 5)) %>%
   addFlows(
     flow_data$lng0, flow_data$lat0, flow_data$lng1, flow_data$lat1,
     flow = flow_data$count,
@@ -221,7 +240,9 @@ leaflet(flow_data) %>%
 
 ```
 
+Migrants from South Sudan have migrated majorly to African countries and a few to India in the Asian sub-continent. It seems that South Sudan migrants might be either financially drained to make long distance journeys to US/ Canada/ Europe which are popular destinations for migrants all over the world or it seems that South Sudanese people are not being openly accepted in these countries.
 
+Given that for more than 10 years more than 50% of the population has been living below the poverty line hypothesis 1- makes more sense. Also, analysing the word clouds of articles on South Sudan migration seem to highlight the humanitarian crisis this war has taken.
 
 Word-Cloud for Article Coverages: South Sudan
 

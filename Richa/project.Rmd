@@ -6,7 +6,7 @@ output: html_document
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
 
 # Load packages.
-packages <- c("ggplot2", "tidyverse", "wbstats", "rgdal", "leaflet", "dplyr", "lubridate", "viridis","countrycode","ggthemes","stringi","tm","SnowballC","wordcloud","RColorBrewer","corpus","unikn", "purrr","gower","lme4","multcomp","mvtnorm","corpustools","reshape2", "leaflet.minicharts")
+packages <- c("ggplot2", "tidyverse", "wbstats", "rgdal", "leaflet", "dplyr", "lubridate", "viridis","countrycode","ggthemes","stringi","tm","SnowballC","wordcloud","RColorBrewer","corpus","unikn", "purrr","gower","lme4","multcomp","mvtnorm","corpustools","reshape2", "leaflet.minicharts", "DT", "plotly")
 
 packages <- lapply(packages, FUN = function(x) {
   if(!require(x, character.only = TRUE)) {
@@ -28,7 +28,29 @@ theme_set(theme_clean())
 
 ## Introduction {.tabset .tabset-fade .tabset-pills}
 
-### 2017 World Migration Flows
+### The world
+
+```{r}
+# SM.POP.NETM - World bank indicator for Net migration- total number of migrants
+# SP.POP.TOTL - World bank indicator for Total population- total population
+mig_pop <- wbstats::wb(country = "countries_only",indicator = c("SM.POP.NETM", "SP.POP.TOTL"),  startdate = "2007", enddate = "2020", return_wide = TRUE)
+
+# Variable to calcualte migration per population
+mig_pop$mig_by_pop <- mig_pop$SM.POP.NETM / mig_pop$SP.POP.TOTL
+
+# Converting date to integer from string
+mig_pop$date <- mig_pop$date %>% as.numeric()
+```
+
+*The Beginning*
+
+The number of international migrants in 2019 was estimated at 270 million. According to migrant data collected in 2017, one in every 30 people in this world is living outside of their country of birth.
+
+Nearly two-thirds of the migrants are looking for work. But there have been massive displacements due to ongoing conflicts and violence. IOM’s Internal Displacement Monitoring Centre has said that a total of 41.3 million people were forced to flee their homes at the end of 2018 – a record since monitoring began in 1998.
+
+We were interested in exploring more about this topic.
+
+The most recent data in World Bank is available for the year 2017.
 
 The map shows the inflows (green) and outflows (red) migration patterns in 2017. The map shows an interesting pattern of the global south on average per country experiencing larger outflows than the global north. Focusing on the outflows, we see that venezuela and the Syrian Arab Republic having the highest rates at -125.2 and -111.1 persons per 1000 people respectively. Also, the other country that had the highest country but was not illustrated was south sudan which at the time of this data set was still part of Sudan.
 
@@ -125,53 +147,24 @@ leaflet(myspdf,options = leafletOptions(zoomControl = TRUE, minZoom = 0, maxZoom
                    options = layersControlOptions(collapsed = FALSE))
 ```
 
-### The world
-
-```{r}
-# SM.POP.NETM - World bank indicator for Net migration- total number of migrants
-# SP.POP.TOTL - World bank indicator for Total population- total population
-mig_pop <- wbstats::wb(country = "countries_only",indicator = c("SM.POP.NETM", "SP.POP.TOTL"),  startdate = "2007", enddate = "2020", return_wide = TRUE)
-
-# Variable to calcualte migration per population
-mig_pop$mig_by_pop <- mig_pop$SM.POP.NETM / mig_pop$SP.POP.TOTL
-
-# Converting date to integer from string
-mig_pop$date <- mig_pop$date %>% as.numeric()
-
-# mig_pop %>%
-#   ggplot(aes(x = date, y = mig_by_pop, color = country)) +
-#   geom_point() +
-#   geom_line(data = mig_pop[!is.na(mig_pop$mig_by_pop),], aes(group = country)) +
-#   theme(legend.position = "none")
-
-```
-
-*The Beginning*
-
-The number of international migrants in 2019 was estimated at 270 million. According to migrant data collected in 2017, one in every 30 people in this world is living outside of their country of birth.
-
-Nearly two-thirds of the migrants are looking for work. But there have been massive displacements due to ongoing conflicts and violence. IOM’s Internal Displacement Monitoring Centre has said that a total of 41.3 million people were forced to flee their homes at the end of 2018 – a record since monitoring began in 1998.
-
-We were interested in exploring more about this topic.
-
-The most recent data in World Bank is available for the year 2017.
+The graph below shows that some countries stand out with higher than normal immigration like Bahrain, Maldives and Oman whereas some other countries are standing out because of all the people moving out of them. For example in Syria, for every 100 people in the country 12 people are moving to other countries.
 
 ```{r}
 # Extract top 3 and least 3 countries for labels
 top3 <-  mig_pop %>%
-  filter(date == 2017 & !is.na(mig_by_pop)) %>%
-  arrange(desc(mig_by_pop)) %>%
+  dplyr::filter(date == 2017 & !is.na(mig_by_pop)) %>%
+  dplyr::arrange(desc(mig_by_pop)) %>%
   head(n = 3) %>%
   dplyr::select(country, mig_by_pop)
 
 least4 <- mig_pop %>%
-  filter(date == 2017 & !is.na(mig_by_pop)) %>%
-  arrange(desc(mig_by_pop)) %>%
+  dplyr::filter(date == 2017 & !is.na(mig_by_pop)) %>%
+  dplyr::arrange(desc(mig_by_pop)) %>%
   tail(n = 4) %>%
   dplyr::select(country, mig_by_pop)
 
-mig_pop %>%
-  filter(date == 2017) %>%
+p <- mig_pop %>%
+  dplyr::filter(date == 2017) %>%
   ggplot() +
   geom_bar(aes(y = mig_by_pop, x = country), stat = "identity", na.rm = TRUE) +
   xlab(NULL) + ylab("migration per person in the country") +
@@ -182,17 +175,18 @@ mig_pop %>%
   labs(
     title = "Migrants per capita (2017)",
     caption = "source: World Bank, Global Poverty Working Group.")
+
+ggplotly(p)
   
 ```
 
-This graph shows that some countries stand out with higher than normal immigration like Bahrain, Maldives and Oman whereas some other countries are standing out because of all the people moving out of them. For example in Syria, for every 100 people in the country 12 people are moving to other countries.
-
-We are interested in understanding what are the reasons that are making these people move out of their home countries.
+We are interested in understanding what are the reasons that are making these people move out of their home countries. We also analysed the future projections of the countries' populations, birth and death rates when these extreme migration circumstances continue. In order to get an all round view of the problem we conducted some text analysis to identify the keywords being used around these challenges.
 
 We are removing Puerto Rico from our observations due to the fact that it is a part of United States and most of the migration that Puerto Rico faces is still inside of the country.
 
 We are more interested in seeing the movement of people within countries and the reasons due to which this happens.
 
+### The Future
 
 ```{r, echo=FALSE}
 library(tidyverse)
@@ -341,6 +335,7 @@ suc_v3 <- sort(rowSums(suc_m3), decreasing = TRUE)
 
 suc_d3 <- data.frame(word = names(suc_v3), freq = suc_v3)
 ```
+
 ```{r}
 d1_syria <- suc_d1 
 names(d1_syria)[names(d1_syria) == "freq"] <- "freq_syria"
@@ -435,4 +430,8 @@ scale_fill_manual(values = usecol(pal_unikn_pair, n = 3, alpha = 0.8)) +
 
 ## Datasets
 
-The World Bank Open Data set includes world development indicators that cover a wide range of metrics across the world. Using the `wb` package, we chose the migration (`SM.POP.NETM`) and population (`SP.POP.TOTL`) indicators to measure the flows of people in all areas were the data was available. The rate was computed using the typical convention of a person per 1000 people. This allows for ease of interpretation and comparability across countries. For example, a 4 rate would be interpreted as a 4 persons coming into the country per 1000 people of the current year's population. In a similar fasion, a -4 rate would be interpreted as 4 persons leaving the country per 1000 people.
+1. The [World Bank Open Data](http://www.worldbank.org/) set includes world development indicators that cover a wide range of metrics across the world. Using the `wb` package, we chose the migration (`SM.POP.NETM`) and population (`SP.POP.TOTL`) indicators to measure the flows of people in all areas were the data was available. The rate was computed using the typical convention of a person per 1000 people. This allows for ease of interpretation and comparability across countries. For example, a 4 rate would be interpreted as a 4 persons coming into the country per 1000 people of the current year's population. In a similar fasion, a -4 rate would be interpreted as 4 persons leaving the country per 1000 people.
+
+2.The [UN dataset](https://www.un.org/en/development/desa/population/migration/data/estimates2/estimates19.asp) presents estimates of international migrant by age, sex and origin. Estimates are presented for 1990, 1995, 2000, 2005, 2010, 2015 and 2019 and are available for all countries and areas of the world. The estimates are based on official statistics on the foreign-born or the foreign population.
+
+3. Since June 2011, the Violations Documentation Center in Syria (VDC) has [recorded](https://data.world/polymathic/casualties-of-the-syrian-civil-war) casualties resulting from the ongoing civil war in Syria.
