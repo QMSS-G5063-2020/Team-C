@@ -10,6 +10,7 @@ library(wbstats)
 library(ggplot2)
 library(tidyverse)
 library(leaflet)
+library(plotly)
 ```
 
 ```{r}
@@ -280,14 +281,7 @@ wordcloud(
 
 
 ### The Future
-```{r, echo=FALSE}
-library(tidyverse)
-library(dplyr)
-library(ggplot2)
-library(ggthemes)
-library(plotly)
-library(DT)
-
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
 dfpop = read.csv("Data/WPP2019_TotalPopulationBySex.csv")
 ```
 
@@ -295,9 +289,14 @@ dfpop = read.csv("Data/WPP2019_TotalPopulationBySex.csv")
 ```{r}
 dfpop_venezuela <- dfpop %>%
   filter(Variant %in% c("Medium", "Zero migration")) %>%
-  filter(Location == "Venezuela (Bolivarian Republic of)")
-plot_popvenezuela <- ggplot(data=dfpop_venezuela, aes(x=Time, y=PopTotal, fill=Variant, color=Variant)) + geom_line()
-plot_popvenezuela
+  filter(Location == "Venezuela (Bolivarian Republic of)") %>%
+  filter(Time <= "2020")
+dfpop_venezuela2 <- dfpop %>%
+  filter(Variant %in% c("Medium", "Zero migration")) %>%
+  filter(Location == "Venezuela (Bolivarian Republic of)") %>%
+  filter(Time >= "2020")
+plot_popvenezuela <- ggplot() + geom_line(data=dfpop_venezuela, aes(x=Time, y=PopTotal, fill=Variant, color=Variant)) + geom_point(size=0.1, data=dfpop_venezuela2, aes(x=Time, y=PopTotal, fill=Variant, color=Variant))
+ggplotly(plot_popvenezuela)
 ```
 
 This graph illustrates the total population (y-axis) development of the Bolivarian Republic of Venezuela over time (x-axis). In the period from 1950 to 2019 the population is increasing constantly with the exception from 2015 to 2019. At that time Venezuela suffered from a dramatic financial crisis, which might have had an effect on the total population. From 2020 to 2100 the graph includes two different curves. The red one is the medium projection variant, which the most popular type because it is based on the median of all trajectories based on a probabilistic model. The blue line describes the zero migration variant, which assumes that there is no international migration and projects the population based on that. In general the curves show that the assumptions are that more people are entering the country than people are leaving it. However, the curves almost noticably interesect in 2100. It is a very far ahead projection of population of course, but it is interesting that both curves seem to decrease from around 2060 on.
