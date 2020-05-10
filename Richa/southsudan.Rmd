@@ -246,6 +246,9 @@ Given that for more than 10 years more than 50% of the population has been livin
 
 Word-Cloud for Article Coverages: South Sudan
 
+Now, let's look at the frequent terms that come up in articles that mentioned migration related terms and South Sudan. In doing so, we utilized Web article coverages from Factiva database for 2019 and selected the recent 20 articles pertaining to South Sudan that also mentioned migration related terms such as immigrants, migration, refugee, migrant and asylum seekers. The year was chosen to focus on the discussion surrounding the issues of immigrants prior to the COVID pandemic. 
+
+We can infer that the discussion revolves around internal conflict in South Sudan that has displaced many people. South Sudan gained independence from Sudan in July 2011, but the ruling political party that originally led the way for independence, is divided and fighting for power which erupted into violence in the streets of the capital, Juba. South Sudan is one of the most fled countries in the world, alongside Syria, Afghanistan and Venezuela.
 ```{r, message=FALSE, warning=FALSE, verbose=FALSE}
 library(ggplot2)
 library(dplyr)
