@@ -343,6 +343,10 @@ suc_v1 <- sort(rowSums(suc_m1), decreasing = TRUE)
 
 suc_d1 <- data.frame(word = names(suc_v1), freq = suc_v1)
 ```
+
+Now, let's look at the frequent terms that come up in articles that mentioned migration related term and Syria. In doing so, we utilized Web article coverages from Factiva database for 2019 and selected the recent 20 articles pertaining to Syria that also mentioned migration related terms such as immigrants, migration, refugee, migrant and asylum seekers. The year was chosen to focus on the discussion surrounding the issues of immigrants prior to the COVID pandemic. 
+
+We can see that Turkey comes up a lot in discussions pertaining to Syria followed by Russia, United States.Turkey has been diplomatically and militarily involved in the Syrian Civil War since its outbreak in 2011. In 2017, Turkish forces launched an operation to establish observation posts in the northern Idlib Governorate, in coordination with Russia. On the other hand, the United States has sought to reduce its involvement in Syria and does not back the Bashar Al Ashad led government while Russia supports Ashad.
 ```{r, message=FALSE, warning=FALSE, verbose=FALSE}
 set.seed(1234)
 wordcloud(
