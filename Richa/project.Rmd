@@ -206,7 +206,7 @@ dfzm_countries <- dfperiod_zm %>%
   filter(Location %in% c("Syrian Arab Republic", "Venezuela (Bolivarian Republic of)", "South Sudan"))
 ```
 
-In order to show how the immigration developments impact the population the following graphs focus on births and deaths. Additionally, the graphs give a better impression of how national events affected the population directly through births and deaths.
+To view trends on future projections, we use the United Nations World Populations Prospects Data. In order to show how the immigration developments impact the population the following graphs focus on births and deaths. Additionally, the graphs give a better impression of how national events affected the population directly through births and deaths.
 
 *Births in number of births including both sexes combined in thousands (Medium)*
 ```{r}
@@ -433,7 +433,7 @@ scale_fill_manual(values = usecol(pal_unikn_pair, n = 3, alpha = 0.8)) +
 
 1. The [World Bank Open Data](http://www.worldbank.org/) set includes world development indicators that cover a wide range of metrics across the world. Using the `wb` package, we chose the migration (`SM.POP.NETM`) and population (`SP.POP.TOTL`) indicators to measure the flows of people in all areas where the data was available. The rate was computed using the typical convention of a person per 1000 people. This allows for ease of interpretation and comparability across countries. For example, a 4 rate would be interpreted as a 4 persons coming into the country per 1000 people of the current year's population. In a similar fashion, a -4 rate would be interpreted as 4 persons leaving the country per 1000 people.
 
-2. The [UN dataset](https://www.un.org/en/development/desa/population/migration/data/estimates2/estimates19.asp) presents estimates of international migrant by age, sex and origin. Estimates are presented for 1990, 1995, 2000, 2005, 2010, 2015 and 2019 and are available for all countries and areas of the world. The estimates are based on official statistics on the foreign-born or the foreign population.
+2. The [UN dataset](https://www.un.org/en/development/desa/population/migration/data/estimates2/estimates19.asp) presents estimates of international migrant by age, sex and origin. Estimates are presented for 1990, 1995, 2000, 2005, 2010, 2015 and 2019 and are available for all countries and areas of the world. The estimates are based on official statistics on the foreign-born or the foreign population. The UN World Population prospects Data consists of future projections on migration trends till 2100.
 
 3. Since June 2011, the Violations Documentation Center in Syria (VDC) has [recorded](https://data.world/polymathic/casualties-of-the-syrian-civil-war) casualties resulting from the ongoing civil war in Syria.
 
