@@ -142,13 +142,13 @@ df_ven <- data.frame(group=group, lng=lng, lat=lat)
 destination_data_ven <- destination_data_ven[c(1, 10:241)]
 
 # Rename column
-destination_data_ven <- rename(destination_data_ven, c("year" = "...1"))
+destination_data_ven <- dplyr::rename(destination_data_ven, c("year" = "...1"))
 flow_data <- destination_data_ven %>%
   pivot_longer(-year, names_to = "country", values_to = "count")
 
 world_sub1 <- world_sub %>%
   dplyr::select(sovereignt, Latitude, Longitude)
-world_sub1 <- rename(world_sub1, c("lat1" = "Latitude", "lng1" = "Longitude"))
+world_sub1 <- dplyr::rename(world_sub1, c("lat1" = "Latitude", "lng1" = "Longitude"))
 
 flow_data <- merge(flow_data, world_sub1, by.x = "country", by.y = "sovereignt")
 

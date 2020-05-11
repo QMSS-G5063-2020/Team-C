@@ -165,13 +165,13 @@ content <- sprintf("<strong>%s</strong><br/>%g",
 destination_data_syr <- destination_data_syr[c(1, 10:241)]
 
 # Rename column
-destination_data_syr <- rename(destination_data_syr, c("year" = "...1"))
+destination_data_syr <- dplyr::rename(destination_data_syr, c("year" = "...1"))
 flow_data <- destination_data_syr %>%
   pivot_longer(-year, names_to = "country", values_to = "count")
 
 world_sub1 <- world_sub %>%
   dplyr::select(sovereignt, Latitude, Longitude)
-world_sub1 <- rename(world_sub1, c("lat1" = "Latitude", "lng1" = "Longitude"))
+world_sub1 <- dplyr::rename(world_sub1, c("lat1" = "Latitude", "lng1" = "Longitude"))
 
 flow_data <- merge(flow_data, world_sub1, by.x = "country", by.y = "sovereignt")
 flow_data$lat0 = world_syr_syr$Latitude
