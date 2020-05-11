@@ -3,7 +3,7 @@ Story of Migrants
 
 (https://qmss-g5063-2020.github.io/Team-C/Richa/project.html) - Analysis File
 
-(https://drive.google.com/open?id=1WOCNwxcjIux1EZLismv97E4OQwRQj9t6) - Video Access
+(https://drive.google.com/open?id=1WOCNwxcjIux1EZLismv97E4OQwRQj9t6) - Video Google Drive Access
 
 Get to know more about migration. We wanted to research about countries which have heavy per capita migration. 
 
