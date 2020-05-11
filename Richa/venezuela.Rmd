@@ -3,7 +3,7 @@
 
 Venezuela is a country located at the northern end of South America. It occupies a roughly triangular area that is larger than the combined areas of France and Germany.
 
-The economy of Venezuela is a market-based mixed economy based largely on the petroleum and manufacturing sectors, and has been in a state of total economic collapse since the mid-2010s. This has aled to a mass-exodus of people from the country which has been facing an economic and political turmoil since a long time.
+The economy of Venezuela is a market-based mixed economy based largely on the petroleum and manufacturing sectors, and has been in a state of total economic collapse since the mid-2010s. This has led to a mass-exodus of people from the country which has been facing an economic and political turmoil since a long time.
 
 ```{r}
 library(wbstats)
