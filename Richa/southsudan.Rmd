@@ -181,9 +181,9 @@ flow_data <- drop_na(flow_data)
 
 binpal <- colorBin("-RdYlBu", world_ssu$value, 6, pretty = FALSE)
 
-leaflet(flow_data) %>%
+leaflet(flow_data, options = leafletOptions(zoomControl = TRUE, minZoom = 2, maxZoom = 5)) %>%
+  addProviderTiles(providers$CartoDB.Positron)%>%
   setView(lat = 7.308779, lng = 30.2479, zoom = 4) %>%
-  addTiles('https://tiles.stadiamaps.com/tiles/osm_bright/{z}/{x}/{y}{r}.png', options = providerTileOptions(minZoom = 2, maxZoom = 5)) %>%
   addFlows(
     flow_data$lng0, flow_data$lat0, flow_data$lng1, flow_data$lat1,
     flow = flow_data$count,
