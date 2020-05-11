@@ -27,11 +27,7 @@ p <- gdp_data_ven %>%
   geom_hline(yintercept = 0, color = "red")
 
 ggplotly(p) %>%
-  plotly::layout(title = list(text = paste0('GDP per capita growth (2000-14)',
-                                    '<br>',
-                                    '<sup>',
-                                    'source: World Bank, Global Poverty Working Group.',
-                                    '</sup>')))
+  plotly::layout(title = list(text = paste0('GDP per capita growth (2000-14)')))
 
 ```
 
